@@ -150,25 +150,17 @@ Any comments are welcome! \emph{Please} help me improve this package!
   \draw (#1.center) -- (#1-3.center);
   \node (lastlevel) at (#1) {};
   \node (lastlevel-3) at (#1-3){};
+  \setcounter{transdist}{1}
 \end{scope}
 }
 
 \newcommand\transition[4][midway]{
   \node (translow) [node distance = \thetransdist,right=of #2] {};
   \node (transup) [node distance = \thetransdist,right=of #3] {};
-  \draw [#4] (translow.center) -- (transup.center) node (photonleft)[#1]{};
+  \draw [->] (translow.center) -- (transup.center) node (photonleft)[#1]{};
   \node [node distance = \photonlength](photonright) [right=of photonleft] {};
-  \draw [#4,decorate,decoration=snake] (photonright) -- (photonleft);
-}
-
-\newcommand\transitionright[3][]{
+  \draw [#4,decorate,decoration={snake,pre length=6pt,post length=2pt}] (photonright) -- (photonleft);
   \stepcounter{transdist}
-  \transition[#1]{#2}{#3}
-}
-
-\newcommand\transitionleft[3][]{
-  \addtocounter{transdist}{-1}
-  \transition[#1]{#2}{#3}
 }
 
 \newcommand\absorb[3][midway]{
@@ -178,17 +170,24 @@ Any comments are welcome! \emph{Please} help me improve this package!
 \newcommand\emit[3][midway]{
   \transition[#1]{#2}{#3}{<-}
 }
+
+\newcommand\shifttrans[1]{
+  \addtocounter{transdist}{#1}
+}
+
+
 %    \end{macrocode}
 % For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|).
 %    \begin{macrocode}
 \newcommand\zeemansplit[3]{
+  \setcounter{transdist}{0}
   \node (zeemanstart) [right=of lastlevel-3]{};
   \forLoop{1}{#1}{sublevel}{
-    \node (zeeman-#3-\thesublevel) [%
+    \node (#3-\thesublevel) [%
       node distance= #2*(-#1/2+(\thesublevel-.5)),%
       above=of zeemanstart.south%
       ]{};
-  \draw (lastlevel-3.center) to (zeeman-#3-\thesublevel.center) -- +(2,0) node (end-#3-\thesublevel) {};
+  \draw (lastlevel-3.center) to (#3-\thesublevel.center) -- +(2,0) node (end-#3-\thesublevel) {};
   }
 }
 %    \end{macrocode}
