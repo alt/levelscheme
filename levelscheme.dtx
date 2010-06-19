@@ -48,7 +48,7 @@ This work conists of this file levelscheme.dtx
 %<batchfile>\endbatchfile
 %<*internal>
 \generate{\file{levelscheme.ins}{\from{levelscheme.dtx}{batchfile}}}
-\nopostamble
+\nopostamble\nopreamble
 \generate{\file{readme.markdown}{\from{levelscheme.dtx}{readme}}}
 \endgroup
 %</internal>
@@ -105,11 +105,90 @@ Any comments are welcome! \emph{Please} help me improve this package!
 % Ok, enough blahblah, now comes the code. We begin with preamble stuff:
 %    \begin{macrocode}
 \ProvidesPackage{levelscheme}
-  [2010/01/09 v 0.c alternative way of TeXing]
-\RequirePackage{expl3}
-\ExplSyntaxOn
-\RequirePackage{amsmath}
-%    \end{macrocode}LL
+  [2010/06/19 v 0.pre-a atomic/molecular level schemes]
+\RequirePackage{
+  forloop,
+  tikz
+}
+
+\usetikzlibrary{%
+	arrows,%
+	decorations.pathmorphing,%
+	positioning%
+}
+
+\newcommand\levellength{3}
+\newcommand\ls@leveldistance{1}
+
+\newcommand\leveldistance[1]{
+  \renewcommand\ls@leveldistance{#1}
+}
+
+
+\newcommand\photonlength{2.5}
+
+\newcommand\zeemanlength{2}
+
+\newcounter{levelnr}
+\newcounter{transdist}
+\newcounter{sublevel}
+
+\setcounter{levelnr}{1}
+\setcounter{transdist}{1}
+
+\newenvironment{levelscheme}
+	{\begin{tikzpicture}[inner sep=0mm]%
+	\node (lastlevel) at (0,0){};%
+}
+	{\end{tikzpicture}}
+
+\newcommand{\level}[1][\thelevelnr]{
+\begin{scope}[node distance = \ls@leveldistance and \levellength]
+  \node (#1) [below=of lastlevel] {\llap{#1}};
+  \node (#1-2) [right=of #1] {};
+  \node (#1-3) [right=of #1-2] {};
+  \draw (#1) -- (#1-3);
+  \node (lastlevel) at (#1) {};
+  \node (lastlevel-3) at (#1-3){};
+\end{scope}
+}
+
+\newcommand\transition[4][midway]{
+  \node (translow) [node distance = \thetransdist,right=of #2] {};
+  \node (transup) [node distance = \thetransdist,right=of #3] {};
+  \draw [#4] (translow) -- (transup) node (photonleft)[#1]{};
+  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
+  \draw [#4,decorate,decoration=snake] (photonright) -- (photonleft);
+}
+
+\newcommand\transitionright[3][]{
+  \stepcounter{transdist}
+  \transition[#1]{#2}{#3}
+}
+
+\newcommand\transitionleft[3][]{
+  \addtocounter{transdist}{-1}
+  \transition[#1]{#2}{#3}
+}
+
+\newcommand\absorb[3][midway]{
+  \transition[#1]#2#3{->}
+}
+
+\newcommand\emit[3][midway]{
+  \transition[#1]#2#3{<-}
+}
+%    \end{macrocode}
+% For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|).
+%    \begin{macrocode}
+\newcommand\zeemansplit[3]{
+  \node (zeemanstart) at (lastlevel-3){};
+  \forLoop{1}{#1}{sublevel}{
+    \node (zeeman-#3-\thesublevel) [node distance = -#2*((#1+2)/2 - \thesublevel) and 1, above right=of zeemanstart]{};
+  \draw (zeemanstart) -- (zeeman-#3-\thesublevel) -- +(2,0) node (end-#3-\thesublevel) {};
+  }
+}
+%    \end{macrocode}
 % \section{Known Bugs}
 % This should be a list of serious bugs. Please report any of them to me!
 % \begin{itemize}
@@ -126,61 +205,3 @@ Any comments are welcome! \emph{Please} help me improve this package!
 % \fi
 % \Finale
 \endinput
-
-
-
-
-
-
-
-
-\begin{levelscheme}
-\level[a]
-\level[b]
-\level[c]
-\transition[midway]{b}{a}
-\transitionright[near start]{c}{a}
-\end{levelscheme}
-
-\end{document}
-
-\usetikzlibrary{%
-	arrows,%
-	decorations.pathmorphing,%
-	positioning%
-}
-
-\newenvironment{levelscheme}
-	{\begin{tikzpicture}[inner sep=.5mm]%
-	\node (lastlevel) at (0,0){};%
-}
-	{\end{tikzpicture}}
-
-\newcommand\levellength{3}
-\newcommand\leveldistance{1}
-\newcommand\photonlength{3}
-
-\newcounter{levelnr}
-\setcounter{levelnr}{1}
-
-\newcommand{\level}[1][\thelevelnr]{
-\begin{scope}[node distance = \leveldistance and \levellength]
-  \node (#1) [below=of lastlevel] {#1};
-  \node (#1-2) [right=of #1] {};
-  \node (#1-3) [right=of #1-2] {};
-  \draw (#1) -- (#1-3);
-  \node (lastlevel) at (#1) {};
-\end{scope}
-}
-
-\newcommand\transition[3][midway]{
-  \node (translow) [right=of #2] {};
-  \node (transup) [right=of #3] {};
-  \draw [->] (translow) -- (transup) node (photonleft)[#1]{};
-  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
-  \draw [->,decorate,decoration=snake] (photonright) -- (photonleft);
-}
-
-\newcommand\transitionright[3][]{
-  \transition[#1]{#2}{#3}
-}
