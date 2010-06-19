@@ -172,11 +172,11 @@ Any comments are welcome! \emph{Please} help me improve this package!
 }
 
 \newcommand\absorb[3][midway]{
-  \transition[#1]#2#3{->}
+  \transition[#1]{#2}{#3}{->}
 }
 
 \newcommand\emit[3][midway]{
-  \transition[#1]#2#3{<-}
+  \transition[#1]{#2}{#3}{<-}
 }
 %    \end{macrocode}
 % For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|).
