@@ -1,0 +1,186 @@
+% \iffalse
+%<*internal>
+%% File: levelscheme.dtx by Arno Trautmann, mail: arno dot trautmann at gmx dot de
+\iffalse
+%</internal>
+%<*readme>
+levelscheme tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
+
+The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any LaTeX-flavour.
+ 
+Any comments are welcome! \emph{Please} help me improve this package!
+
+Contact me: arno dot trautmann at gmx dot de.
+%</readme>
+%<*internal>
+\fi
+\begingroup
+%</internal>
+%<*batchfile>
+\input docstrip.tex
+\keepsilent
+\preamble
+EXPERIMENTAL CODE
+
+Do not distribute this file without also distributing the
+source files specified above.
+
+Do not distribute a modified version of this file under the same name.
+
+\endpreamble
+\postamble
+Copyright 2010 Arno Trautmann <arno.trautmann@gmx.de>
+
+Distributed under the LaTeX Project Public License,
+verson 1.3c or higher (your choice). The latest version of
+this license is at: http://www.latex-project.org/lppl.txt
+
+This work is "author-maintained" by Arno Trautmann
+
+This work conists of this file levelscheme.dtx
+         and the derived files levelscheme.sty
+                                  and  levelscheme.pdf.
+\endpostamble
+\askforoverwritefalse
+
+\generate{\file{levelscheme.sty}{\from{levelscheme.dtx}{levelscheme}}}
+%</batchfile>
+%<batchfile>\endbatchfile
+%<*internal>
+\generate{\file{levelscheme.ins}{\from{levelscheme.dtx}{batchfile}}}
+\nopostamble
+\generate{\file{readme.markdown}{\from{levelscheme.dtx}{readme}}}
+\endgroup
+%</internal>
+%
+%<*driver>
+\documentclass[a4paper]{ltxdoc}
+\usepackage[english]{babel}
+\usepackage{
+  hyperref,
+  xltxtra
+}
+
+\hypersetup{%
+  pdfborder= 0 0 0,
+  colorlinks=true,
+  linkcolor= blue,
+  pdftitle=levelscheme
+}
+
+\def\filedate{2010/06/19}
+\def\fileversion{0.pre-a}
+
+\title{The \textsf{levelscheme} package}
+\author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
+\date{Version \fileversion\ \filedate}
+
+\EnableCrossrefs
+\CodelineIndex
+\RecordChanges
+
+\usepackage{ifthen}
+
+%\OnlyDescription
+\begin{document}
+\maketitle
+This is the package |levelscheme| which tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
+ 
+Any comments are welcome! \emph{Please} help me improve this package!
+\tableofcontents
+\newpage
+\part{Documentation}
+\section{Introduction}
+\section{Usage}
+\StopEventually{}
+\clearpage
+
+\part{Implementation: levelscheme.sty}
+
+\DocInput{levelscheme.dtx}
+\end{document}
+%</driver>
+%<*levelscheme>
+% \fi
+% Ok, enough blahblah, now comes the code. We begin with preamble stuff:
+%    \begin{macrocode}
+\ProvidesPackage{levelscheme}
+  [2010/01/09 v 0.c alternative way of TeXing]
+\RequirePackage{expl3}
+\ExplSyntaxOn
+\RequirePackage{amsmath}
+%    \end{macrocode}LL
+% \section{Known Bugs}
+% This should be a list of serious bugs. Please report any of them to me!
+% \begin{itemize}
+% \item ?
+% \end{itemize}
+% \newpage\appendix
+% \section*{todo}
+% Here a section with some ideas that could be implemented.
+% \begin{itemize}
+% \item Implement a whole MOT-scheme
+% \end{itemize}
+% \iffalse
+%</levelscheme>
+% \fi
+% \Finale
+\endinput
+
+
+
+
+
+
+
+
+\begin{levelscheme}
+\level[a]
+\level[b]
+\level[c]
+\transition[midway]{b}{a}
+\transitionright[near start]{c}{a}
+\end{levelscheme}
+
+\end{document}
+
+\usetikzlibrary{%
+	arrows,%
+	decorations.pathmorphing,%
+	positioning%
+}
+
+\newenvironment{levelscheme}
+	{\begin{tikzpicture}[inner sep=.5mm]%
+	\node (lastlevel) at (0,0){};%
+}
+	{\end{tikzpicture}}
+
+\newcommand\levellength{3}
+\newcommand\leveldistance{1}
+\newcommand\photonlength{3}
+
+\newcounter{levelnr}
+\setcounter{levelnr}{1}
+
+\newcommand{\level}[1][\thelevelnr]{
+\begin{scope}[node distance = \leveldistance and \levellength]
+  \node (#1) [below=of lastlevel] {#1};
+  \node (#1-2) [right=of #1] {};
+  \node (#1-3) [right=of #1-2] {};
+  \draw (#1) -- (#1-3);
+  \node (lastlevel) at (#1) {};
+\end{scope}
+}
+
+\newcommand\transition[3][midway]{
+  \node (translow) [right=of #2] {};
+  \node (transup) [right=of #3] {};
+  \draw [->] (translow) -- (transup) node (photonleft)[#1]{};
+  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
+  \draw [->,decorate,decoration=snake] (photonright) -- (photonleft);
+}
+
+\newcommand\transitionright[3][]{
+  \transition[#1]{#2}{#3}
+}
