@@ -117,12 +117,65 @@ Any comments are welcome! \emph{Please} help me improve this package!
 	decorations.pathmorphing,%
 	positioning%
 }
-
-%% setting up constants/varibles and macros to set them
+%    \end{macrocode}
+% \subsection{Keys}
+% keys:
+%    \begin{macrocode}
+\ExplSyntaxOn
+\keys_define:nn{ls_trans}{
+  dir.code:n = \tl_set:Nn\ls_trans_dir{#1},
+  right.meta:n = {dir=right},
+  left.meta:n = {dir=left},
+%
+  loc.code:n = \tl_set:Nn\ls_trans_loc{#1},
+%
+  pos.code:n = \tl_set:Nn\ls_trans_pos{#1},
+  midway.meta:n = {pos=midway},
+  near~end.meta:n = {pos=near~end}
+}
+\ExplSyntaxOff
+%% all keys defined, now nice interface:
 \ExplSyntaxNamesOn
+%% intern command to set keys (misc)
+%% this here needs clean up!
+\cs_new:Nn\ls_setkeys:n{%
+  \keys_set:nn{ls}{#1}%
+}%
+
+%% intern command to set keys (transitions only)
+\cs_new:Nn\ls_setkeys_trans:n{%
+  \keys_set:nn{ls_trans}{#1}
+}
+
+%% user level wrapper, only for misc
+\NewDocumentCommand\lssetkeys{o m}{%
+  \IfNoValueTF{#1}
+    {\ls_setkeys:n{#2}}
+    {\keys_set:nn{ls_#1}{#2}}
+}
+%    \end{macrocode}
+%\subsection{Constants and Variables}
+% setting up constants/varibles.
+%    \begin{macrocode}
 \DeclareExpandableDocumentCommand\levellength{}{2}
 \cs_new:Nn\ls_leveldistance:{1}
 
+\DeclareExpandableDocumentCommand\photonlength{}{2.5}
+\DeclareExpandableDocumentCommand\finestructlength{}{2}
+
+\int_new:c{levelnr}
+\int_new:c{transdist}
+\int_new:c{HOlevel}
+
+\tl_gset:Nn\c_ls_right{right}
+
+\newcounter{sublevel}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
+
+\int_gset:cn{levelnr}{1}
+\int_gset:cn{transdist}{1}
+%    \end{macrocode}
+% User level macros to set them
+%    \begin{macrocode}
 \DeclareDocumentCommand\leveldistance{m}{
   \renewcommand\ls_leveldistance:{#1}
 }
@@ -134,18 +187,10 @@ Any comments are welcome! \emph{Please} help me improve this package!
   \cs_set:Nn\ls_subleveldistance:{#1}
 }
 
-\DeclareExpandableDocumentCommand\photonlength{}{2.5}
-\DeclareExpandableDocumentCommand\finestructlength{}{2}
-
-\int_new:c{levelnr}
-\int_new:c{transdist}
-\int_new:c{HOlevel}
-
-\newcounter{sublevel}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
-
-\int_gset:cn{levelnr}{1}
-\int_gset:cn{transdist}{1}
-
+%    \end{macrocode}
+% \subsection{Level Scheme}
+% This is the main environment of this package, and almost everything elese is based on this. Mostly, it is just a wrapper for a |tikzpicture| with some settings.
+%    \begin{macrocode}
 \DeclareDocumentEnvironment{levelscheme}{O{}}
 	{\begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
 	\node (lastlevel) at (0,0){};%
@@ -163,11 +208,10 @@ Any comments are welcome! \emph{Please} help me improve this package!
   \int_set:cn{transdist}{1}
 \end{scope}
 }
-
 %    \end{macrocode}
 % A number of sublevels of given distances
 %    \begin{macrocode}
-\DeclareDocumentEnvironment{sublevels}{O{lastlevel-3} mm}
+\DeclareDocumentCommand\sublevels{O{lastlevel-3}mm}
 {
   \node (sublevelstart) [right=of #1.center]{};
   \foreach \x in {#3}{%
@@ -178,43 +222,29 @@ Any comments are welcome! \emph{Please} help me improve this package!
     \draw (#1.center) -- (#2-\x.center) -- +(2,0) node (end-#2-\x) {\hbox to 2em{\hfill \x}};
   }
 }
-{
-}
-\ExplSyntaxNamesOff
 %    \end{macrocode}
-% For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|).
+% For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|). Nop,this is not the correct docu …
 %    \begin{macrocode}
+\DeclareDocumentCommand\transition{O{} mmm}{
+%% evaluate keys
+  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway}  %% bit of a strange but necessary way to define a default
+  \ls_setkeys_trans:n{#1}
+%% construct nodes
+  \node (translow) [node distance = \ls_trans_loc ,right=of #2] {};
+  \node (transup) [node distance = \ls_trans_loc,right=of #3] {};
 
-%% keys:
-\ExplSyntaxOn
-\keys_define:nn{ls}{
-  transdir.choice:,
-  transdir / left.code:n = left,
-  transdir / right.code:n = right
-}
-%% intern command to set keys
-\cs_new:Nn\ls_setkeys:n{%
-  \keys_set:nn{ls}{%
-    #1%
-  }%
-}%
+%% draw the thing and define a center at which the photon ends
+  \draw [->] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
 
-%% user level wrapper
-\NewDocumentCommand\lssetkeys{m}{\ls_setkeys:n{#1}}
-%%
-\ExplSyntaxOff
-
-\ExplSyntaxNamesOn
-\DeclareDocumentCommand\transition{O{midway} mmm}{
-  \node (translow) [node distance = \int_use:c{transdist},right=of #2] {};
-  \node (transup) [node distance = \int_use:c{transdist},right=of #3] {};
-  \draw [->] (translow.center) -- (transup.center) node (photonleft)[#1]{};
-  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
-  \photon[#4]{photonright}{photonleft};
+%% calculate the beginning of the photon
+  \tl_if_eq:NNTF\ls_trans_dir\c_ls_right  %% does the photon come from right or left?
+    {\node [node distance = \photonlength](photonstart) [right=of photonend] {};}
+    {\node [node distance = \photonlength](photonstart) [left=of photonend]   {};}
+  \photon[#4]{photonstart}{photonend};  %% no matter what left or right …
   \int_incr:c{transdist}
 }
 
-  %% a set of sublevels at constant distances
+%% a set of sublevels at constant distances
 \NewDocumentCommand\finestruct{mmm}{
   \int_set:cn{transdist}{0}
   \node (finestart) [right=of lastlevel-3]{};
@@ -235,15 +265,15 @@ Any comments are welcome! \emph{Please} help me improve this package!
   \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt}] (#2) -- (#3);
 }
 
-\NewDocumentCommand\absorb{O{midway}mm}{
+\NewDocumentCommand\absorb{O{midway,dir=left}mm}{
   \transition[#1]{#2}{#3}{->}
 }
 
-\NewDocumentCommand\emit{O{midway}mm}{
+\NewDocumentCommand\emit{O{midway,dir=right}mm}{
   \transition[#1]{#2}{#3}{<-}
 }
 
-\NewDocumentCommand\indemit{O{midway}mm}{
+\NewDocumentCommand\indemit{O{midway,dir=right}mm}{
   \transition[#1]{#2}{#3}{<-}
   \photon{1,1}{2,2}
 %% TODO
@@ -261,8 +291,8 @@ Any comments are welcome! \emph{Please} help me improve this package!
 \begin{levelscheme}
   \level{MOT-upper}
   \level{MOT-lower}
-  \absorb{MOT-lower}{MOT-upper}
-  \absorb{MOT-lower}{MOT-upper}
+  \absorb[loc=0.25*\levellength]{MOT-lower}{MOT-upper}
+  \absorb[right,loc=1.75*\levellength]{MOT-lower}{MOT-upper}
 \end{levelscheme}
 }
 
