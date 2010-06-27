@@ -7,7 +7,7 @@
 levelscheme tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
 
 The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any LaTeX-flavour.
- 
+
 Any comments are welcome! \emph{Please} help me improve this package!
 
 Contact me: arno dot trautmann at gmx dot de.
@@ -69,7 +69,7 @@ This work conists of this file levelscheme.dtx
 }
 
 \def\filedate{2010/06/19}
-\def\fileversion{0.pre-a}
+\def\fileversion{0.a}
 
 \title{The \textsf{levelscheme} package}
 \author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
@@ -80,7 +80,6 @@ This work conists of this file levelscheme.dtx
 \RecordChanges
 
 \usepackage{ifthen}
-
 %\OnlyDescription
 \begin{document}
 \maketitle
@@ -105,10 +104,12 @@ Any comments are welcome! \emph{Please} help me improve this package!
 % Ok, enough blahblah, now comes the code. We begin with preamble stuff:
 %    \begin{macrocode}
 \ProvidesPackage{levelscheme}
-  [2010/06/19 v 0.pre-a atomic/molecular level schemes]
+  [2010/06/19 v 0.a atomic/molecular level schemes]
 \RequirePackage{
+  expl3,
   forloop,
-  tikz
+  tikz,
+  xparse
 }
 
 \usetikzlibrary{%
@@ -117,79 +118,184 @@ Any comments are welcome! \emph{Please} help me improve this package!
 	positioning%
 }
 
-\newcommand\levellength{3}
-\newcommand\ls@leveldistance{1}
+%% setting up constants/varibles and macros to set them
+\ExplSyntaxNamesOn
+\DeclareExpandableDocumentCommand\levellength{}{2}
+\cs_new:Nn\ls_leveldistance:{1}
 
-\newcommand\leveldistance[1]{
-  \renewcommand\ls@leveldistance{#1}
+\DeclareDocumentCommand\leveldistance{m}{
+  \renewcommand\ls_leveldistance:{#1}
 }
 
+\DeclareDocumentCommand\sublevellength{}{2}
+\cs_new:Nn\ls_subleveldistance:{1}
 
-\newcommand\photonlength{2.5}
+\DeclareDocumentCommand\subleveldistance{m}{
+  \cs_set:Nn\ls_subleveldistance:{#1}
+}
 
-\newcommand\zeemanlength{2}
+\DeclareExpandableDocumentCommand\photonlength{}{2.5}
+\DeclareExpandableDocumentCommand\finestructlength{}{2}
 
-\newcounter{levelnr}
-\newcounter{transdist}
-\newcounter{sublevel}
+\int_new:c{levelnr}
+\int_new:c{transdist}
+\int_new:c{HOlevel}
 
-\setcounter{levelnr}{1}
-\setcounter{transdist}{1}
+\newcounter{sublevel}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
 
-\newenvironment{levelscheme}
-	{\begin{tikzpicture}[inner sep=0mm,>=stealth]%
+\int_gset:cn{levelnr}{1}
+\int_gset:cn{transdist}{1}
+
+\DeclareDocumentEnvironment{levelscheme}{O{}}
+	{\begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
 	\node (lastlevel) at (0,0){};%
 }
 	{\end{tikzpicture}}
 
-\newcommand{\level}[1][\thelevelnr]{
-\begin{scope}[node distance = \ls@leveldistance and \levellength]
-  \node (#1) [below=of lastlevel] {\llap{#1}};
-  \node (#1-2) [right=of #1] {};
-  \node (#1-3) [right=of #1-2] {};
-  \draw (#1.center) -- (#1-3.center);
-  \node (lastlevel) at (#1) {};
-  \node (lastlevel-3) at (#1-3){};
-  \setcounter{transdist}{1}
+\DeclareDocumentCommand\level{O{}m}{
+\begin{scope}[node distance = \ls_leveldistance: and \levellength]
+  \node (#2) [below=of lastlevel] {\llap{#1}};
+  \node (#2-2) [right=of #2] {};
+  \node (#2-3) [right=of #2-2] {};
+  \draw (#2.center) -- (#2-3.center);
+  \node (lastlevel) at (#2) {};
+  \node (lastlevel-3) at (#2-3){};
+  \int_set:cn{transdist}{1}
 \end{scope}
 }
 
-\newcommand\transition[4][midway]{
-  \node (translow) [node distance = \thetransdist,right=of #2] {};
-  \node (transup) [node distance = \thetransdist,right=of #3] {};
-  \draw [->] (translow.center) -- (transup.center) node (photonleft)[#1]{};
-  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
-  \draw [#4,decorate,decoration={snake,pre length=6pt,post length=2pt}] (photonright) -- (photonleft);
-  \stepcounter{transdist}
+%    \end{macrocode}
+% A number of sublevels of given distances
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{sublevels}{O{lastlevel-3} mm}
+{
+  \node (sublevelstart) [right=of #1.center]{};
+  \foreach \x in {#3}{%
+    \node (#2-\x) [%
+      node distance= \x*\ls_subleveldistance:,%
+      above=of sublevelstart.south%
+      ]{};
+    \draw (#1.center) -- (#2-\x.center) -- +(2,0) node (end-#2-\x) {\hbox to 2em{\hfill \x}};
+  }
 }
-
-\newcommand\absorb[3][midway]{
-  \transition[#1]{#2}{#3}{->}
+{
 }
-
-\newcommand\emit[3][midway]{
-  \transition[#1]{#2}{#3}{<-}
-}
-
-\newcommand\shifttrans[1]{
-  \addtocounter{transdist}{#1}
-}
-
-
+\ExplSyntaxNamesOff
 %    \end{macrocode}
 % For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|).
 %    \begin{macrocode}
-\newcommand\zeemansplit[3]{
-  \setcounter{transdist}{0}
-  \node (zeemanstart) [right=of lastlevel-3]{};
+
+%% keys:
+\ExplSyntaxOn
+\keys_define:nn{ls}{
+  transdir.choice:,
+  transdir / left.code:n = left,
+  transdir / right.code:n = right
+}
+%% intern command to set keys
+\cs_new:Nn\ls_setkeys:n{%
+  \keys_set:nn{ls}{%
+    #1%
+  }%
+}%
+
+%% user level wrapper
+\NewDocumentCommand\lssetkeys{m}{\ls_setkeys:n{#1}}
+%%
+\ExplSyntaxOff
+
+\ExplSyntaxNamesOn
+\DeclareDocumentCommand\transition{O{midway} mmm}{
+  \node (translow) [node distance = \int_use:c{transdist},right=of #2] {};
+  \node (transup) [node distance = \int_use:c{transdist},right=of #3] {};
+  \draw [->] (translow.center) -- (transup.center) node (photonleft)[#1]{};
+  \node [node distance = \photonlength](photonright) [right=of photonleft] {};
+  \photon[#4]{photonright}{photonleft};
+  \int_incr:c{transdist}
+}
+
+  %% a set of sublevels at constant distances
+\NewDocumentCommand\finestruct{mmm}{
+  \int_set:cn{transdist}{0}
+  \node (finestart) [right=of lastlevel-3]{};
   \forLoop{1}{#1}{sublevel}{
     \node (#3-\thesublevel) [%
       node distance= #2*(-#1/2+(\thesublevel-.5)),%
-      above=of zeemanstart.south%
+      above=of finestart.south%
       ]{};
   \draw (lastlevel-3.center) to (#3-\thesublevel.center) -- +(2,0) node (end-#3-\thesublevel) {};
   }
 }
+
+\NewDocumentCommand\shifttrans{m}{
+  \int_add:cn{transdist}{#1}
+}
+
+\NewDocumentCommand\photon{O{->}mm}{
+  \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt}] (#2) -- (#3);
+}
+
+\NewDocumentCommand\absorb{O{midway}mm}{
+  \transition[#1]{#2}{#3}{->}
+}
+
+\NewDocumentCommand\emit{O{midway}mm}{
+  \transition[#1]{#2}{#3}{<-}
+}
+
+\NewDocumentCommand\indemit{O{midway}mm}{
+  \transition[#1]{#2}{#3}{<-}
+  \photon{1,1}{2,2}
+%% TODO
+}
+
+\NewDocumentCommand\relaxation{mm}{
+%% TODO
+}
+%    \end{macrocode}
+% \section{Potentials}
+%The macros presented in this section enable you to draw some of the typical potentials needed in atomic and molecular physics. Plans are to implement a hormonic potential, Morse potential, Lennard-Jones potential, a gaussian potential (optical dipole trap) and a linear potential. This is \emph{not} intended for rigorous calculations and scientific things, just for sketching. If you need exakt forms of potentials and level distances, go for a professional program.
+%\subsection{MOT}
+%    \begin{macrocode}
+\NewDocumentCommand\MOT{}{
+\begin{levelscheme}
+  \level{MOT-upper}
+  \level{MOT-lower}
+  \absorb{MOT-lower}{MOT-upper}
+  \absorb{MOT-lower}{MOT-upper}
+\end{levelscheme}
+}
+
+%\subsection{Harmonic Oszillator}
+\NewDocumentCommand\HOhight{}{0.5}
+\NewDocumentCommand\HOwidth{}{0.5}
+
+\NewDocumentCommand\HO{O{5}m}{
+\begin{tikzpicture}[domain=-2:2]
+  \draw plot (\x,\x^2*\HOwidth){};
+  \forLoop{0}{#1}{HOlevel}{
+    \def\HOL{{(\theHOlevel+0.5)*\HOhight}}
+    \draw ({sqrt(\HOL/\HOwidth)},\HOL) -- ({-sqrt(\HOL/\HOwidth)},\HOL){};
+  }
+\end{tikzpicture}}
+%    \end{macrocode}
+%\subsection{Lennard-Jones potential}
+%    \begin{macrocode}
+\NewDocumentEnvironment{lennardjones}{}
+{\begin{tikzpicture}[domain=1.0:4]
+\draw plot[smooth] (\x,5*{(\x^(-12))-5*(\x^(-6))}){};
+}
+{\end{tikzpicture}}
+%    \end{macrocode}
+%\subsection{Morse potential}
+%    \begin{macrocode}
+\NewDocumentEnvironment{morsepotential}{}
+{\begin{tikzpicture}[domain=0:5]
+\draw plot[smooth] 	(\x,{(1*(1-exp(-0.7*(\x*2-1))))^2}){};
+}
+{\end{tikzpicture}}
+
+\ExplSyntaxNamesOff
 %    \end{macrocode}
 % \section{Known Bugs}
 % This should be a list of serious bugs. Please report any of them to me!
