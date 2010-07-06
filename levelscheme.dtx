@@ -44,6 +44,7 @@ This work conists of this file levelscheme.dtx
 \askforoverwritefalse
 
 \generate{\file{levelscheme.sty}{\from{levelscheme.dtx}{levelscheme}}}
+\generate{\file{levelscheme-example.tex}{\from{levelscheme.dtx}{example}}}
 %</batchfile>
 %<batchfile>\endbatchfile
 %<*internal>
@@ -68,8 +69,8 @@ This work conists of this file levelscheme.dtx
   pdftitle=levelscheme
 }
 
-\def\filedate{2010/06/19}
-\def\fileversion{0.a}
+\def\filedate{2010/06/27}
+\def\fileversion{0.a1}
 
 \title{The \textsf{levelscheme} package}
 \author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
@@ -79,7 +80,6 @@ This work conists of this file levelscheme.dtx
 \CodelineIndex
 \RecordChanges
 
-\usepackage{ifthen}
 %\OnlyDescription
 \begin{document}
 \maketitle
@@ -90,7 +90,20 @@ Any comments are welcome! \emph{Please} help me improve this package!
 \newpage
 \part{Documentation}
 \section{Introduction}
+This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
+
 \section{Usage}
+There are some simple commands and some that will develop quite elaborate. The most simple way to work with |levelscheme| is to draw levels and connect them by transitions. Every level has a name and can have a label. The transitions can be absorptions, emissions and (not yet implemented) stimulated emissions. Use them by name:
+\begin{verbatim}
+\level{first}
+\level{second}
+\absorb{second}{first}
+\end{verbatim}
+You have to have the process in mind to get the right directions: absorptions are always from the lower level to the upper, but you might as well change the arguments – this will lead to a violation of energy conservation as you get a transition to the lower level \emph{and} absorb a photon …
+
+\subsection{Tuning}
+Most of the commands can be tuned to adapt the user’s needs. This is mostly done by a key-value interface, but also some macros are used to set important variables. This all will most probably chang in the next weeks, so no documentation so far.
+
 \StopEventually{}
 \clearpage
 
@@ -101,41 +114,52 @@ Any comments are welcome! \emph{Please} help me improve this package!
 %</driver>
 %<*levelscheme>
 % \fi
-% Ok, enough blahblah, now comes the code. We begin with preamble stuff:
-%    \begin{macrocode}
+% \setcounter{section}{0}
+% \section{Preamble}
+% Preamble stuff, package loading. We use |xparse| due to superior macro definition as well as |expl3| (required by xparse) to get the nice |l3keys|.
+% 
+% Last, special tikz-libraries for arrows etc.
+%    \begin{macrocode} 
 \ProvidesPackage{levelscheme}
-  [2010/06/19 v 0.a atomic/molecular level schemes]
+  [2010/06/27 v 0.a1 atomic/molecular level schemes]
 \RequirePackage{
-  expl3,
   forloop,
   tikz,
   xparse
 }
-
 \usetikzlibrary{%
 	arrows,%
 	decorations.pathmorphing,%
 	positioning%
 }
+\usepgflibrary{%
+	shapes.misc%
+}
+\ExplSyntaxOn
 %    \end{macrocode}
-% \subsection{Keys}
+% \section{Keys}
 % keys:
 %    \begin{macrocode}
-\ExplSyntaxOn
 \keys_define:nn{ls_trans}{
   dir.code:n = \tl_set:Nn\ls_trans_dir{#1},
   right.meta:n = {dir=right},
   left.meta:n = {dir=left},
-%
+% kind of arrows used
+  arrow.code:n = \tl_set:Nn\ls_trans_arrow{{#1}},
+  {<->}.meta:n = \tl_set:Nn\ls_trans_arrow{{<->}},
+%  location of the transition relative to <what?>
   loc.code:n = \tl_set:Nn\ls_trans_loc{#1},
 %
   pos.code:n = \tl_set:Nn\ls_trans_pos{#1},
   midway.meta:n = {pos=midway},
   near~end.meta:n = {pos=near~end}
 }
-\ExplSyntaxOff
+
+\keys_define:nn{ls_pot}{
+  domain.code:n = \tl_set:Nn\ls_pot_domain{#1}
+}
+
 %% all keys defined, now nice interface:
-\ExplSyntaxNamesOn
 %% intern command to set keys (misc)
 %% this here needs clean up!
 \cs_new:Nn\ls_setkeys:n{%
@@ -154,22 +178,22 @@ Any comments are welcome! \emph{Please} help me improve this package!
     {\keys_set:nn{ls_#1}{#2}}
 }
 %    \end{macrocode}
-%\subsection{Constants and Variables}
+%\section{Constants and Variables}
 % setting up constants/varibles.
 %    \begin{macrocode}
-\DeclareExpandableDocumentCommand\levellength{}{2}
-\cs_new:Nn\ls_leveldistance:{1}
+\tl_set:Nn\ls_levellength{2}
+\tl_set:Nn\ls_leveldistance{1}
 
 \DeclareExpandableDocumentCommand\photonlength{}{2.5}
 \DeclareExpandableDocumentCommand\finestructlength{}{2}
 
 \int_new:c{levelnr}
 \int_new:c{transdist}
-\int_new:c{HOlevel}
 
 \tl_gset:Nn\c_ls_right{right}
 
 \newcounter{sublevel}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
+\newcounter{HOlevel}   %% here for the for-loop in the harmonic oszillator
 
 \int_gset:cn{levelnr}{1}
 \int_gset:cn{transdist}{1}
@@ -177,7 +201,7 @@ Any comments are welcome! \emph{Please} help me improve this package!
 % User level macros to set them
 %    \begin{macrocode}
 \DeclareDocumentCommand\leveldistance{m}{
-  \renewcommand\ls_leveldistance:{#1}
+  \tl_gset:Nn\ls_leveldistance{#1}
 }
 
 \DeclareDocumentCommand\sublevellength{}{2}
@@ -186,28 +210,42 @@ Any comments are welcome! \emph{Please} help me improve this package!
 \DeclareDocumentCommand\subleveldistance{m}{
   \cs_set:Nn\ls_subleveldistance:{#1}
 }
-
+\ExplSyntaxOff
 %    \end{macrocode}
-% \subsection{Level Scheme}
+% \section{Level Scheme}
 % This is the main environment of this package, and almost everything elese is based on this. Mostly, it is just a wrapper for a |tikzpicture| with some settings.
 %    \begin{macrocode}
+\ExplSyntaxNamesOn
 \DeclareDocumentEnvironment{levelscheme}{O{}}
-	{\begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
-	\node (lastlevel) at (0,0){};%
-}
-	{\end{tikzpicture}}
+  {\begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
+    \node (lastlevel) at (0,0){};%
+  }
+{\end{tikzpicture}}
 
 \DeclareDocumentCommand\level{O{}m}{
-\begin{scope}[node distance = \ls_leveldistance: and \levellength]
+\begin{scope}[node distance = \ls_leveldistance and \ls_levellength]
   \node (#2) [below=of lastlevel] {\llap{#1}};
   \node (#2-2) [right=of #2] {};
   \node (#2-3) [right=of #2-2] {};
   \draw (#2.center) -- (#2-3.center);
   \node (lastlevel) at (#2) {};
   \node (lastlevel-3) at (#2-3){};
-  \int_set:cn{transdist}{1}
+  \int_set:cn{transdist}{1}  %% return to normal distance
 \end{scope}
 }
+
+\DeclareDocumentCommand\dashedlevel{O{}m}{
+\begin{scope}[node distance = \ls_leveldistance and \ls_levellength]
+  \node (#2) [below=of lastlevel] {\llap{#1}};
+  \node (#2-2) [right=of #2] {};
+  \node (#2-3) [right=of #2-2] {};
+  \draw[style=dashed] (#2.center) -- (#2-3.center);
+  \node (lastlevel) at (#2) {};
+  \node (lastlevel-3) at (#2-3){};
+  \int_set:cn{transdist}{1}  %% return to normal distance
+\end{scope}
+}
+
 %    \end{macrocode}
 % A number of sublevels of given distances
 %    \begin{macrocode}
@@ -223,28 +261,33 @@ Any comments are welcome! \emph{Please} help me improve this package!
   }
 }
 %    \end{macrocode}
-% For a Zeeman splitting: First argument gives the number of splitted levels, the second argument gives the relative splitting (in units of |ls@leveldistance|). Nop,this is not the correct docu …
+% A transition. This is kind of the basic macro for nearly everything interesting. I hope it is configurable enough to be really useful. However, key-value is as expandable as one wishes, so the first argument is a key-value list for everyeverything.
 %    \begin{macrocode}
-\DeclareDocumentCommand\transition{O{} mmm}{
-%% evaluate keys
-  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway}  %% bit of a strange but necessary way to define a default
-  \ls_setkeys_trans:n{#1}
-%% construct nodes
-  \node (translow) [node distance = \ls_trans_loc ,right=of #2] {};
-  \node (transup) [node distance = \ls_trans_loc,right=of #3] {};
-
-%% draw the thing and define a center at which the photon ends
-  \draw [->] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
-
-%% calculate the beginning of the photon
+\DeclareDocumentCommand\transition{sO{} mmm}{
+  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway,arrow={->}}  %% bit of a strange but necessary way to define a default
+  \ls_setkeys_trans:n{#2}
+%
+%% construct nodes and draw the thing, define a center at which the photon ends
+%
+  \node (translow) [node distance = \ls_trans_loc ,right=of #3] {};
+  \node (transup) [node distance = \ls_trans_loc,right=of #4] {};
+  \draw [\ls_trans_arrow] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
+%
+%% calculate the beginning of the photon, depending wether it comes/goes to/from left or right
+%
+  \IfBooleanTF{#1}{}{ %% is there a photon in this transition? i.e. no star given
   \tl_if_eq:NNTF\ls_trans_dir\c_ls_right  %% does the photon come from right or left?
-    {\node [node distance = \photonlength](photonstart) [right=of photonend] {};}
-    {\node [node distance = \photonlength](photonstart) [left=of photonend]   {};}
-  \photon[#4]{photonstart}{photonend};  %% no matter what left or right …
-  \int_incr:c{transdist}
+      {\node [node distance = \photonlength](photonstart) [right=of photonend] {};}
+      {\node [node distance = \photonlength](photonstart) [left=of photonend]   {};}
+    \photon[#5]{photonstart}{photonend};
+  }
+%
+  \int_incr:c{transdist}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
 }
-
-%% a set of sublevels at constant distances
+%    \end{macrocode}
+% a set of sublevels at constant distances
+% \begin{macro}{finestruct}
+%    \begin{macrocode}
 \NewDocumentCommand\finestruct{mmm}{
   \int_set:cn{transdist}{0}
   \node (finestart) [right=of lastlevel-3]{};
@@ -256,32 +299,72 @@ Any comments are welcome! \emph{Please} help me improve this package!
   \draw (lastlevel-3.center) to (#3-\thesublevel.center) -- +(2,0) node (end-#3-\thesublevel) {};
   }
 }
-
+%    \end{macrocode}
+% \end{macro}
+% for shifting the transitions by hand
+%    \begin{macrocode}
 \NewDocumentCommand\shifttrans{m}{
   \int_add:cn{transdist}{#1}
 }
-
-\NewDocumentCommand\photon{O{->}mm}{
-  \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt}] (#2) -- (#3);
+%    \end{macrocode}
+% a transition with arrows at both sides to indicate that a cyled transition is meant
+%    \begin{macrocode}
+\NewDocumentCommand\cycle{O{}mm}{
+  \transition*[#1,arrow={<->}]{#2}{#3}{}
 }
-
+%    \end{macrocode}
+% a single photon from node 1 to node 2
+%    \begin{macrocode}
+\NewDocumentCommand\photon{O{->}mm}{
+  \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt},cross out, draw=black] (#2) [cross out, draw=black]-- (#3);
+}
+%    \end{macrocode}
+% absorbtion of a photon, a special transition
+%    \begin{macrocode}
 \NewDocumentCommand\absorb{O{midway,dir=left}mm}{
   \transition[#1]{#2}{#3}{->}
 }
-
+%    \end{macrocode}
+% emission of a photon, another special transition
+%    \begin{macrocode}
 \NewDocumentCommand\emit{O{midway,dir=right}mm}{
   \transition[#1]{#2}{#3}{<-}
 }
-
+%    \end{macrocode}
+% induced emission as needed for a laser. Not yet implemented.
+%    \begin{macrocode}
 \NewDocumentCommand\indemit{O{midway,dir=right}mm}{
   \transition[#1]{#2}{#3}{<-}
   \photon{1,1}{2,2}
 %% TODO
 }
-
+%    \end{macrocode}
+% photonless transition
+%    \begin{macrocode}
 \NewDocumentCommand\relaxation{mm}{
 %% TODO
 }
+%    \end{macrocode}
+% \section{$\Lambda$ scheme}
+% The environment |lambdascheme| is usefull to draw a $\Lambda$ shaped niveau system.
+%    \begin{macrocode}
+\NewDocumentEnvironment{lambdascheme}{}
+  {\begin{levelscheme}
+    \tl_set:Nn\ls_levellength{1}
+    \tl_set:Nn\ls_lambdaApos{1.5,4}
+    \tl_set:Nn\ls_lambdaBpos{3,1}
+    \tl_set:Nn\ls_lambdaCpos{0,0}
+    \node (lastlevel) at (\ls_lambdaApos){};
+    \level{lambda-A}
+    \node (lastlevel) at (\ls_lambdaBpos){};
+    \level{lambda-B}
+    \node (lastlevel) at (\ls_lambdaCpos){};
+    \level{lambda-C}
+    \cycle{lambda-C}{lambda-A}
+    \shifttrans{-\ls_levellength}
+    \cycle{lambda-B}{lambda-A}
+  }
+  {\end{levelscheme}}
 %    \end{macrocode}
 % \section{Potentials}
 %The macros presented in this section enable you to draw some of the typical potentials needed in atomic and molecular physics. Plans are to implement a hormonic potential, Morse potential, Lennard-Jones potential, a gaussian potential (optical dipole trap) and a linear potential. This is \emph{not} intended for rigorous calculations and scientific things, just for sketching. If you need exakt forms of potentials and level distances, go for a professional program.
@@ -290,53 +373,105 @@ Any comments are welcome! \emph{Please} help me improve this package!
 \NewDocumentCommand\MOT{}{
 \begin{levelscheme}
   \level{MOT-upper}
+  \tl_set:Nn\ls_motdistance{0.95}
+  \node (MOT-plus-right) [node distance=\ls_motdistance,above = of MOT-upper-3] {};
+  \node (MOT-plus-left) [node distance=\ls_motdistance,below = of MOT-upper] {};
+  \node (MOT-minus-right) [node distance=\ls_motdistance,below = of MOT-upper-3] {};
+  \node (MOT-minus-left) [node distance=\ls_motdistance,above = of MOT-upper] {};
+
+  \leveldistance{0.5}
+  \dashedlevel{MOT-middle}
+  \leveldistance{3}
   \level{MOT-lower}
-  \absorb[loc=0.25*\levellength]{MOT-lower}{MOT-upper}
-  \absorb[right,loc=1.75*\levellength]{MOT-lower}{MOT-upper}
+
+  \draw (MOT-plus-left) -- (MOT-plus-right);
+  \draw (MOT-minus-left) -- (MOT-minus-right);
+  \absorb[loc=0.3*\ls_levellength]{MOT-lower}{MOT-middle}
+  \absorb[right,loc=1.7*\ls_levellength]{MOT-lower}{MOT-upper}
 \end{levelscheme}
 }
+%    \end{macrocode}
+% \subsection{Harmonic Oszillator}
+%    \begin{macrocode}
+\tl_set:Nn\lsHOhight{0.5}
+\tl_set:Nn\lsHOwidth{0.5}
 
-%\subsection{Harmonic Oszillator}
-\NewDocumentCommand\HOhight{}{0.5}
-\NewDocumentCommand\HOwidth{}{0.5}
+\NewDocumentEnvironment{EIT}{}
+{\begin{levelscheme}
+\
+\tl_set:Nn\ls_levellength{0.2}
+\level{mynewlevelshit}
+}
+{\end{levelscheme}}
 
-\NewDocumentCommand\HO{O{5}m}{
-\begin{tikzpicture}[domain=-2:2]
-  \draw plot (\x,\x^2*\HOwidth){};
-  \forLoop{0}{#1}{HOlevel}{
-    \def\HOL{{(\theHOlevel+0.5)*\HOhight}}
-    \draw ({sqrt(\HOL/\HOwidth)},\HOL) -- ({-sqrt(\HOL/\HOwidth)},\HOL){};
+\group_begin:
+  \char_set_lccode:nn { `\! } { `\: }
+  \char_make_other:N \!
+\tl_to_lowercase:n {
+  \group_end:
+  \cs_new:Npn\setdomains#1#2{
+  \pgfkeys {tikz/domain = #1 ! #2}
   }
-\end{tikzpicture}}
+}
+
+\NewDocumentCommand\HO{O{4}m}{
+\setdomains{-2}{2}
+  \begin{tikzpicture}
+    \draw plot (\x,{\x^2*\lsHOwidth}){};
+    \forLoop{0}{#1}{HOlevel}{
+      \def\HOL{{(\theHOlevel+0.5)*\lsHOhight}}
+      \draw ({sqrt(\HOL/\lsHOwidth)},\HOL) -- ({-sqrt(\HOL/\lsHOwidth)},\HOL){};
+  }
+  \end{tikzpicture}
+}
 %    \end{macrocode}
 %\subsection{Lennard-Jones potential}
 %    \begin{macrocode}
-\NewDocumentEnvironment{lennardjones}{}
-{\begin{tikzpicture}[domain=1.0:4]
-\draw plot[smooth] (\x,5*{(\x^(-12))-5*(\x^(-6))}){};
+  \DeclareDocumentCommand\potlevel{m}{
+    \def\potlevelleft{%
+      {2^(1/6)/\ljSigma*((sqrt(\ljEpsilon^2+#1*\ljEpsilon)/#1) - (\ljEpsilon/#1))^(1/6)-0.03*#1}% %% WTF correction summand needed?!?
+    }
+    \def\potlevelright{
+      {2^(1/6)/\ljSigma*((-sqrt(\ljEpsilon^2+#1*\ljEpsilon)/#1) - (\ljEpsilon/#1))^(1/6)}%
+    }
+    \draw (\potlevelleft,#1) -- (\potlevelright,#1){};
 }
-{\end{tikzpicture}}
+\NewDocumentEnvironment{lennardjones}{mm}
+{
+  \gdef\ljEpsilon{#1}
+  \gdef\ljSigma{#2}
+  \setdomains{1}{4}
+  \begin{tikzpicture}
+  \draw plot[smooth] (\x,{4*\ljEpsilon*((\ljSigma*\x)^(-12)-(\ljSigma*\x)^(-6))}){};
+}{
+  \end{tikzpicture}
+}
+\ExplSyntaxNamesOff
 %    \end{macrocode}
 %\subsection{Morse potential}
 %    \begin{macrocode}
-\NewDocumentEnvironment{morsepotential}{}
-{\begin{tikzpicture}[domain=0:5]
-\draw plot[smooth] 	(\x,{(1*(1-exp(-0.7*(\x*2-1))))^2}){};
+\NewDocumentEnvironment{morsepotential}{O{}}
+{
+%%%  \ls_setkeys_potential{#1}
+  \begin{tikzpicture}[domain=1:3]
+    \draw plot[smooth] (\x,{(1*(1-exp(-0.7*(\x*2-1))))^2}){};
+    \draw plot[smooth] (\x,{(1*(1-exp(-0.7*(\x*2-1))))^2+0.3}){};
+}{
+  \end{tikzpicture}
 }
-{\end{tikzpicture}}
 
-\ExplSyntaxNamesOff
 %    \end{macrocode}
 % \section{Known Bugs}
-% This should be a list of serious bugs. Please report any of them to me!
+% This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
-% \item ?
+% \item MOT beams should be aligned and all at same hight
+% \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
 % \end{itemize}
 % \newpage\appendix
-% \section*{todo}
+% \section*{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
-% \item Implement a whole MOT-scheme
+% \item Feshbach resonances
 % \end{itemize}
 % \iffalse
 %</levelscheme>
