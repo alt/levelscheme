@@ -317,6 +317,7 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 %    \begin{macrocode}
 \NewDocumentCommand\photon{O{->}mm}{
   \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt},cross out, draw=black] (#2) [cross out, draw=black]-- (#3);
+\node (0,0) [cross out,draw = black]{hallo};
 }
 %    \end{macrocode}
 % absorbtion of a photon, a special transition
@@ -346,7 +347,7 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 }
 %    \end{macrocode}
 % \section{$\Lambda$ scheme}
-% The environment |lambdascheme| is usefull to draw a $\Lambda$ shaped niveau system.
+% The environment |lambdascheme| is usefull to draw a $\Lambda$ shaped niveau system. For example, use it to depicture the EIT effect.
 %    \begin{macrocode}
 \NewDocumentEnvironment{lambdascheme}{}
   {\begin{levelscheme}
@@ -461,17 +462,20 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 }
 
 %    \end{macrocode}
+% \newpage\appendix
 % \section{Known Bugs}
 % This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
 % \item MOT beams should be aligned and all at same hight
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
 % \end{itemize}
-% \newpage\appendix
-% \section*{todo – missing features}
+% \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
 % \item Feshbach resonances
+% \item implement colors (Na, Li)
+% \item implement whole correct hyperfine schemes (data?!)
+% \item …
 % \end{itemize}
 % \iffalse
 %</levelscheme>
