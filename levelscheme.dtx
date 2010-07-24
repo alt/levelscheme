@@ -101,8 +101,8 @@ There are some simple commands and some that will develop quite elaborate. The m
 \end{verbatim}
 You have to have the process in mind to get the right directions: absorptions are always from the lower level to the upper, but you might as well change the arguments – this will lead to a violation of energy conservation as you get a transition to the lower level \emph{and} absorb a photon …
 
-\subsection{Tuning}
-Most of the commands can be tuned to adapt the user’s needs. This is mostly done by a key-value interface, but also some macros are used to set important variables. This all will most probably chang in the next weeks, so no documentation so far.
+\subsection{Options}
+Most of the commands can be tuned to fit the user’s needs. This is mostly done by a key-value interface, but also some macros are used to set important variables. This all will most probably change in the near future, so no documentation so far.
 
 \StopEventually{}
 \clearpage
@@ -147,31 +147,37 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 % kind of arrows used
   arrow.code:n = \tl_set:Nn\ls_trans_arrow{{#1}},
   {<->}.meta:n = \tl_set:Nn\ls_trans_arrow{{<->}},
-%  location of the transition relative to <what?>
+%  location of the transition relative to the previous transition (kind of)
   loc.code:n = \tl_set:Nn\ls_trans_loc{#1},
 %
   pos.code:n = \tl_set:Nn\ls_trans_pos{#1},
   midway.meta:n = {pos=midway},
-  near~end.meta:n = {pos=near~end}
+  near~end.meta:n = {pos=near~end},
+  no.code:n = \bool_set_false:N\ls_trans_allowed,
+  not~allowed.meta:n = {no},
+  yes.code:n = \bool_set_true:N\ls_trans_allowed
 }
 
 \keys_define:nn{ls_pot}{
   domain.code:n = \tl_set:Nn\ls_pot_domain{#1}
 }
-
-%% all keys defined, now nice interface:
-%% intern command to set keys (misc)
-%% this here needs clean up!
+%    \end{macrocode}
+% Interface for setting keys:
+% intern command to set keys (all keys)
+% this here needs clean up!
+%    \begin{macrocode}
 \cs_new:Nn\ls_setkeys:n{%
   \keys_set:nn{ls}{#1}%
 }%
-
-%% intern command to set keys (transitions only)
+%    \end{macrocode}
+% intern command to set keys (transitions only)
+%    \begin{macrocode}
 \cs_new:Nn\ls_setkeys_trans:n{%
   \keys_set:nn{ls_trans}{#1}
 }
-
-%% user level wrapper, only for misc
+%    \end{macrocode}
+% user level command
+%    \begin{macrocode}
 \NewDocumentCommand\lssetkeys{o m}{%
   \IfNoValueTF{#1}
     {\ls_setkeys:n{#2}}
@@ -181,6 +187,7 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 %\section{Constants and Variables}
 % setting up constants/varibles.
 %    \begin{macrocode}
+\bool_new:N\ls_trans_allowed
 \tl_set:Nn\ls_levellength{2}
 \tl_set:Nn\ls_leveldistance{1}
 
@@ -264,7 +271,7 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 % A transition. This is kind of the basic macro for nearly everything interesting. I hope it is configurable enough to be really useful. However, key-value is as expandable as one wishes, so the first argument is a key-value list for everyeverything.
 %    \begin{macrocode}
 \DeclareDocumentCommand\transition{sO{} mmm}{
-  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway,arrow={->}}  %% bit of a strange but necessary way to define a default
+  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway,arrow={->},yes}  %% bit of a strange but necessary way to define a default
   \ls_setkeys_trans:n{#2}
 %
 %% construct nodes and draw the thing, define a center at which the photon ends
@@ -280,6 +287,10 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
       {\node [node distance = \photonlength](photonstart) [right=of photonend] {};}
       {\node [node distance = \photonlength](photonstart) [left=of photonend]   {};}
     \photon[#5]{photonstart}{photonend};
+  }
+  \bool_if:NF\ls_trans_allowed{
+  \node [cross out,draw = black] (notallowed) at (photonend)
+                                                   {\hspace*{1em}\strut};
   }
 %
   \int_incr:c{transdist}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
@@ -307,17 +318,22 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
   \int_add:cn{transdist}{#1}
 }
 %    \end{macrocode}
-% a transition with arrows at both sides to indicate that a cyled transition is meant
+% a transition with arrows at both sides to indicate that a cyled transition is meant; with or without photon
 %    \begin{macrocode}
 \NewDocumentCommand\cycle{O{}mm}{
   \transition*[#1,arrow={<->}]{#2}{#3}{}
+}
+\NewDocumentCommand\photoncycle{O{}mm}{
+  \transition[#1,arrow={<->}]{#2}{#3}{->}
+}
+\NewDocumentCommand\nophotoncycle{O{}mm}{
+  \transition*[#1,arrow={<->},no]{#2}{#3}{->}
 }
 %    \end{macrocode}
 % a single photon from node 1 to node 2
 %    \begin{macrocode}
 \NewDocumentCommand\photon{O{->}mm}{
   \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt},cross out, draw=black] (#2) [cross out, draw=black]-- (#3);
-\node (0,0) [cross out,draw = black]{hallo};
 }
 %    \end{macrocode}
 % absorbtion of a photon, a special transition
@@ -472,6 +488,8 @@ Most of the commands can be tuned to adapt the user’s needs. This is mostly do
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
+% \item virtual levels (⇒ Λ)
+% \item change transition position to a float-kind of object (use 
 % \item Feshbach resonances
 % \item implement colors (Na, Li)
 % \item implement whole correct hyperfine schemes (data?!)
