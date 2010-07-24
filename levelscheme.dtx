@@ -79,13 +79,32 @@ This work conists of this file levelscheme.dtx
 \EnableCrossrefs
 \CodelineIndex
 \RecordChanges
+\usepackage{
+  array,
+  levelscheme,
+  showexpl
+}
+
+\lstset{%
+  backgroundcolor=\color[rgb]{.9 .9 .9},
+  basicstyle=\ttfamily\small,
+  breakindent=.5em,
+  breaklines=true,
+  captionpos=b,
+  numbers=none,
+  frame=tlbr,
+  frameround=tttt,
+  rframe=,
+  pos=l,
+  explpreset={preset=\vspace*{-9ex}}
+}
 
 %\OnlyDescription
 \begin{document}
 \maketitle
-This is the package |levelscheme| which tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
+This is the package |levelscheme| which tries to offer an easy way of drawing atomic/molecular level schemes with transitions in a \LaTeX document.
  
-Any comments are welcome! \emph{Please} help me improve this package!
+Any comments are welcome! Please help me improve this package!
 \tableofcontents
 \newpage
 \part{Documentation}
@@ -93,15 +112,72 @@ Any comments are welcome! \emph{Please} help me improve this package!
 This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
 
 \section{Usage}
-There are some simple commands and some that will develop quite elaborate. The most simple way to work with |levelscheme| is to draw levels and connect them by transitions. Every level has a name and can have a label. The transitions can be absorptions, emissions and (not yet implemented) stimulated emissions. Use them by name:
-\begin{verbatim}
-\level{first}
-\level{second}
+You draw levels by using e.\,g. |\level|, give them names and labels and connect them via physical meaningful transitions:
+\begin{LTXexample}[caption=A simple example.]
+\begin{levelscheme}
+\level[A ]{first}
+\virtuallevel[B ]{second}
+\level[1 ]{third}
 \absorb{second}{first}
-\end{verbatim}
-You have to have the process in mind to get the right directions: absorptions are always from the lower level to the upper, but you might as well change the arguments – this will lead to a violation of energy conservation as you get a transition to the lower level \emph{and} absorb a photon …
+\shifttrans{-1}
+\absorb{third}{second}
+\nophotoncycle[no,near end]{first}{third}
+\end{levelscheme}
+\end{LTXexample}
+
+Everything can be adapted to your needs: arrow directions, photon length and direction, positions, distances etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
+
+\subsection{Names}
+To allow transitions etc. every level must have a unique name. This name is given as the mandatory argument of the |\level| command. The optional argument in brackets is a labl that will be printed next to the level bar. You can give arbitrary names and labels, of course.
+
+\subsection{Main Commands}
+There are three classes of commands: Such that represent levels, commands for transitions and potential commands or environments, respectively.
+
+\subsubsection{level}
+\DescribeMacro{\level[]\{\}}
+Draws a line that represents an energy level. Takes two arguments, the second being the unique name of the level. The first argument is optional and contains a label to be printed next to the level.
+\DescribeMacro{\virtuallevel[]\{\}}
+Same as above, but with a dashed line to depict a virtual level.
+
+\DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
+This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |second|) and vertically shifted with respect to that one by the given numbers.
+
+\begin{LTXexample}[preset={\sublevellength{1}\levellength{0.5}}]
+\begin{levelscheme}
+\level{A}
+\sublevels{A}{-1,0,1,1.5}
+\end{levelscheme}
+\end{LTXexample}
+\subsubsection{transitions}
+There are many kinds of possible transitions. For most of them there are special commands. All of them can be adjusted by means of options given in brackets. |\cyle[no]| denotes a forbidden cycling transition. For possible options see section \ref{sec:options}.
+
+All transition commands take three arguments: The first one is an optional argument taking key or key-value pairs. The second and third argument denote the starting and ending level, respectively.
+
+\DescribeMacro{\absorb[]\{\}\{\}}
+Depicts an absorption process, i.\,e. an arrow directing from the first level to the second one with a photon running ”inwards“.
+
+
+\DescribeMacro{\emit[]\{\}\{\}}
+Same as above, emits a photon.
+
+\DescribeMacro{\cycle[]\{\}\{\}}
+Connects two states via an bidirectional arrow, with a photon.
+
+\DescribeMacro{\nophotoncycle[]\{\}\{\}}
+Dito, without a photon.
+
+\DescribeMacro{\emit[]\{\}\{\}}
+
+\DescribeMacro{\transition*[]\{\}\{\}}
+
+\subsubsection{Potentials}
+This package is able to draw several important potentials and to insert levels. They might be at arbitrary positions or even have the correct hight (as in the case of the harmonic oszillator).
+
+\DescribeMacro{HO[]\{\}}
+This makro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
 
 \subsection{Options}
+\label{sec:options}
 Most of the commands can be tuned to fit the user’s needs. This is mostly done by a key-value interface, but also some macros are used to set important variables. This all will most probably change in the near future, so no documentation so far.
 
 \StopEventually{}
@@ -153,6 +229,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   pos.code:n = \tl_set:Nn\ls_trans_pos{#1},
   midway.meta:n = {pos=midway},
   near~end.meta:n = {pos=near~end},
+  near~start.meta:n = {pos=near~start},
   no.code:n = \bool_set_false:N\ls_trans_allowed,
   not~allowed.meta:n = {no},
   yes.code:n = \bool_set_true:N\ls_trans_allowed
@@ -164,7 +241,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \end{macrocode}
 % Interface for setting keys:
 % intern command to set keys (all keys)
-% this here needs clean up!
+% this here needs some clean-up.
 %    \begin{macrocode}
 \cs_new:Nn\ls_setkeys:n{%
   \keys_set:nn{ls}{#1}%
@@ -190,6 +267,9 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \bool_new:N\ls_trans_allowed
 \tl_set:Nn\ls_levellength{2}
 \tl_set:Nn\ls_leveldistance{1}
+\tl_set:Nn\ls_sublevellength{1}
+\tl_set:Nn\ls_subleveldistance{0.5}
+\tl_set:Nn\ls_trans_not_width{2em}
 
 \DeclareExpandableDocumentCommand\photonlength{}{2.5}
 \DeclareExpandableDocumentCommand\finestructlength{}{2}
@@ -210,12 +290,16 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \DeclareDocumentCommand\leveldistance{m}{
   \tl_gset:Nn\ls_leveldistance{#1}
 }
+\DeclareDocumentCommand\levellength{m}{
+  \tl_gset:Nn\ls_levellength{#1}
+}
 
-\DeclareDocumentCommand\sublevellength{}{2}
-\cs_new:Nn\ls_subleveldistance:{1}
+\DeclareDocumentCommand\sublevellength{m}{
+  \tl_gset:Nn\ls_sublevellength{#1}
+}
 
 \DeclareDocumentCommand\subleveldistance{m}{
-  \cs_set:Nn\ls_subleveldistance:{#1}
+  \tl_gset:Nn\ls_subleveldistance{#1}
 }
 \ExplSyntaxOff
 %    \end{macrocode}
@@ -234,14 +318,14 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   \node (#2) [below=of lastlevel] {\llap{#1}};
   \node (#2-2) [right=of #2] {};
   \node (#2-3) [right=of #2-2] {};
-  \draw (#2.center) -- (#2-3.center);
+  \draw [style=solid] (#2.center) -- (#2-3.center);
   \node (lastlevel) at (#2) {};
   \node (lastlevel-3) at (#2-3){};
   \int_set:cn{transdist}{1}  %% return to normal distance
 \end{scope}
 }
 
-\DeclareDocumentCommand\dashedlevel{O{}m}{
+\DeclareDocumentCommand\virtuallevel{O{}m}{
 \begin{scope}[node distance = \ls_leveldistance and \ls_levellength]
   \node (#2) [below=of lastlevel] {\llap{#1}};
   \node (#2-2) [right=of #2] {};
@@ -260,11 +344,11 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 {
   \node (sublevelstart) [right=of #1.center]{};
   \foreach \x in {#3}{%
-    \node (#2-\x) [%
-      node distance= \x*\ls_subleveldistance:,%
+    \node (#2-tmp) [%
+      node distance= \x*\ls_subleveldistance,%
       above=of sublevelstart.south%
       ]{};
-    \draw (#1.center) -- (#2-\x.center) -- +(2,0) node (end-#2-\x) {\hbox to 2em{\hfill \x}};
+    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevellength,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
   }
 }
 %    \end{macrocode}
@@ -290,7 +374,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   }
   \bool_if:NF\ls_trans_allowed{
   \node [cross out,draw = black] (notallowed) at (photonend)
-                                                   {\hspace*{1em}\strut};
+                                                   {\hspace*{\ls_trans_not_width}\strut};
   }
 %
   \int_incr:c{transdist}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
@@ -397,7 +481,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   \node (MOT-minus-left) [node distance=\ls_motdistance,above = of MOT-upper] {};
 
   \leveldistance{0.5}
-  \dashedlevel{MOT-middle}
+  \virtuallevel{MOT-middle}
   \leveldistance{3}
   \level{MOT-lower}
 
@@ -412,14 +496,6 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \begin{macrocode}
 \tl_set:Nn\lsHOhight{0.5}
 \tl_set:Nn\lsHOwidth{0.5}
-
-\NewDocumentEnvironment{EIT}{}
-{\begin{levelscheme}
-\
-\tl_set:Nn\ls_levellength{0.2}
-\level{mynewlevelshit}
-}
-{\end{levelscheme}}
 
 \group_begin:
   \char_set_lccode:nn { `\! } { `\: }
@@ -482,19 +558,27 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \section{Known Bugs}
 % This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
+% \item wtf is wrong with the index?!
 % \item MOT beams should be aligned and all at same hight
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
 % \end{itemize}
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
-% \item virtual levels (⇒ Λ)
-% \item change transition position to a float-kind of object (use 
+% \item sublevels cannot have labels ⇒ give sublevels as pairs, not only numbers ?
+% \item ”snaked“ transitions (relaxations?)
+% \item several columns of levels that can be connected
+% \item some kind of ”zooming“ effect
+% \item pump beams for laser transitions
+% \item levels of a LED
+% \item how about some axes with cool features?
+% \item change transition position to a float-kind of object (use  (what?)
 % \item Feshbach resonances
-% \item implement colors (Na, Li)
+% \item implement colors (e.\,g. Na, Li)
 % \item implement whole correct hyperfine schemes (data?!)
 % \item …
 % \end{itemize}
+% \PrintIndex
 % \iffalse
 %</levelscheme>
 % \fi
