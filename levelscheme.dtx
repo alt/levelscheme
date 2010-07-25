@@ -6,9 +6,9 @@
 %<*readme>
 levelscheme tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
 
-The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any LaTeX-flavour.
+The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any up-to-date LaTeX-flavour.
 
-Any comments are welcome! \emph{Please} help me improve this package!
+Any comments and suggestions are welcome! Help me improve this package!
 
 Contact me: arno dot trautmann at gmx dot de.
 %</readme>
@@ -88,7 +88,7 @@ This work conists of this file levelscheme.dtx
 \lstset{%
   backgroundcolor=\color[rgb]{.9 .9 .9},
   basicstyle=\ttfamily\small,
-  breakindent=.5em,
+  breakindent=1em,
   breaklines=true,
   captionpos=b,
   numbers=none,
@@ -115,25 +115,24 @@ This package aims to provide an easy and fast way to draw atomic level schemes. 
 You draw levels by using e.\,g. |\level|, give them names and labels and connect them via physical meaningful transitions:
 \begin{LTXexample}[caption=A simple example.]
 \begin{levelscheme}
-\level[A ]{first}
-\virtuallevel[B ]{second}
-\level[1 ]{third}
-\absorb{second}{first}
+\level[1]{A}
+\virtuallevel[3]{B}
+\level[2]{C}
+\absorb BA
 \shifttrans{-1}
-\absorb{third}{second}
-\nophotoncycle[no,near end]{first}{third}
+\absorb BC
+\nophotoncycle[no,near end] AC
 \end{levelscheme}
 \end{LTXexample}
 
 Everything can be adapted to your needs: arrow directions, photon length and direction, positions, distances etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
 
-\subsection{Names}
-To allow transitions etc. every level must have a unique name. This name is given as the mandatory argument of the |\level| command. The optional argument in brackets is a labl that will be printed next to the level bar. You can give arbitrary names and labels, of course.
-
 \subsection{Main Commands}
 There are three classes of commands: Such that represent levels, commands for transitions and potential commands or environments, respectively.
 
 \subsubsection{level}
+To allow transitions between levels, every level must have a unique name. This name is given as the mandatory argument of the |\level| command. The optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course.
+
 \DescribeMacro{\level[]\{\}}
 Draws a line that represents an energy level. Takes two arguments, the second being the unique name of the level. The first argument is optional and contains a label to be printed next to the level.
 \DescribeMacro{\virtuallevel[]\{\}}
@@ -142,7 +141,7 @@ Same as above, but with a dashed line to depict a virtual level.
 \DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
 This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |second|) and vertically shifted with respect to that one by the given numbers.
 
-\begin{LTXexample}[preset={\sublevellength{1}\levellength{0.5}}]
+\begin{LTXexample}[preset={\sublevelwidth{1}\levelwidth{0.5}}]
 \begin{levelscheme}
 \level{A}
 \sublevels{A}{-1,0,1,1.5}
@@ -262,40 +261,44 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 }
 %    \end{macrocode}
 %\section{Constants and Variables}
-% setting up constants/varibles.
+% setting up constants/varibles with default values.
 %    \begin{macrocode}
 \bool_new:N\ls_trans_allowed
-\tl_set:Nn\ls_levellength{2}
+
+\tl_gset:Nn\c_ls_right{right}
+
+\tl_set:Nn\ls_levelwidth{2}
 \tl_set:Nn\ls_leveldistance{1}
-\tl_set:Nn\ls_sublevellength{1}
+
+\tl_set:Nn\ls_sublevelwidth{1}
 \tl_set:Nn\ls_subleveldistance{0.5}
+
 \tl_set:Nn\ls_trans_not_width{2em}
+\tl_set:Nn\ls_trans_not_height{2ex} %% not yet used
+
+\tl_set:Nn\ls_level_style{}
+
+\int_new:c{transdist}  %% must be changed to some floating number!
+\int_gset:cn{transdist}{1}
 
 \DeclareExpandableDocumentCommand\photonlength{}{2.5}
 \DeclareExpandableDocumentCommand\finestructlength{}{2}
 
-\int_new:c{levelnr}
-\int_new:c{transdist}
-
-\tl_gset:Nn\c_ls_right{right}
-
-\newcounter{sublevel}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
+\newcounter{finestruct}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
 \newcounter{HOlevel}   %% here for the for-loop in the harmonic oszillator
 
-\int_gset:cn{levelnr}{1}
-\int_gset:cn{transdist}{1}
 %    \end{macrocode}
 % User level macros to set them
 %    \begin{macrocode}
 \DeclareDocumentCommand\leveldistance{m}{
   \tl_gset:Nn\ls_leveldistance{#1}
 }
-\DeclareDocumentCommand\levellength{m}{
-  \tl_gset:Nn\ls_levellength{#1}
+\DeclareDocumentCommand\levelwidth{m}{
+  \tl_gset:Nn\ls_levelwidth{#1}
 }
 
-\DeclareDocumentCommand\sublevellength{m}{
-  \tl_gset:Nn\ls_sublevellength{#1}
+\DeclareDocumentCommand\sublevelwidth{m}{
+  \tl_gset:Nn\ls_sublevelwidth{#1}
 }
 
 \DeclareDocumentCommand\subleveldistance{m}{
@@ -308,35 +311,37 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \begin{macrocode}
 \ExplSyntaxNamesOn
 \DeclareDocumentEnvironment{levelscheme}{O{}}
-  {\begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
+{
+  \begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
     \node (lastlevel) at (0,0){};%
-  }
-{\end{tikzpicture}}
-
+}
+{
+  \end{tikzpicture}
+}
+% 
 \DeclareDocumentCommand\level{O{}m}{
-\begin{scope}[node distance = \ls_leveldistance and \ls_levellength]
-  \node (#2) [below=of lastlevel] {\llap{#1}};
-  \node (#2-2) [right=of #2] {};
-  \node (#2-3) [right=of #2-2] {};
-  \draw [style=solid] (#2.center) -- (#2-3.center);
-  \node (lastlevel) at (#2) {};
-  \node (lastlevel-3) at (#2-3){};
-  \int_set:cn{transdist}{1}  %% return to normal distance
-\end{scope}
+  \begin{scope}[node distance = \ls_leveldistance and \ls_levelwidth]
+    \node (#2) [below=of lastlevel] {\llap{#1\ }};
+    \node (#2-2) [right=of #2] {};
+    \node (#2-3) [right=of #2-2] {};
+    \draw [\ls_level_style] (#2.center) -- (#2-3.center);
+    \node (lastlevel) at (#2) {};
+    \node (lastlevel-3) at (#2-3){};
+    \int_set:cn{transdist}{1}  %% return to normal distance
+  \end{scope}
 }
 
 \DeclareDocumentCommand\virtuallevel{O{}m}{
-\begin{scope}[node distance = \ls_leveldistance and \ls_levellength]
-  \node (#2) [below=of lastlevel] {\llap{#1}};
-  \node (#2-2) [right=of #2] {};
-  \node (#2-3) [right=of #2-2] {};
-  \draw[style=dashed] (#2.center) -- (#2-3.center);
-  \node (lastlevel) at (#2) {};
-  \node (lastlevel-3) at (#2-3){};
-  \int_set:cn{transdist}{1}  %% return to normal distance
-\end{scope}
+  \tl_set:Nn\ls_level_style{dashed}
+  \level[#1]{#2}
+  \tl_set:Nn\ls_level_style{}
 }
 
+\DeclareDocumentCommand\nolevel{O{}m}{
+  \tl_set:Nn\ls_level_style{white}
+  \level[#1]{#2}
+  \tl_set:Nn\ls_level_style{}
+}
 %    \end{macrocode}
 % A number of sublevels of given distances
 %    \begin{macrocode}
@@ -348,15 +353,51 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
       node distance= \x*\ls_subleveldistance,%
       above=of sublevelstart.south%
       ]{};
-    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevellength,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
+    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevelwidth,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
   }
 }
 %    \end{macrocode}
+% An attempt to implement the possibility to use several columns of levels, e.\,g. for para- and ortho-Helium. Not yet useable.
+%    \begin{macrocode}
+\DeclareDocumentCommand\levelcolumns{m}
+{
+  \tikz{node distance = 0.9 and 0.9}
+  \tl_set:Nn\ls_levelwidth{0.8}
+  \node (columnuppernode) at (lastlevel) {};
+  \node (columnuppernode-2) [right=of columnuppernode] {};
+  \node (columnuppernode-3) [right=of columnuppernode-2] {};
+}
+\DeclareDocumentCommand\nextlevelcolumn{}
+{
+  \node (columnuppernode) [right=of columnuppernode-3]{};
+  \node (columnuppernode-2) [right=of columnuppernode] {};
+  \node (columnuppernode-3) [right=of columnuppernode-2] {};
+  \node (lastlevel) at (columnuppernode) {};
+}
+%    \end{macrocode}
+% a set of sublevels at constant distances
+% \begin{macro}{finestruct}
+%    \begin{macrocode}
+\NewDocumentCommand\finestruct{mmm}{
+  \int_set:cn{transdist}{0}
+  \node (finestart) [right=of lastlevel-3]{};
+  \forLoop{1}{#1}{finestruct}{
+    \node (#3-\thefinestruct) [%
+      node distance= #2*(-#1/2+(\thefinestruct-.5)),%
+      above=of finestart.south%
+      ]{};
+  \draw (lastlevel-3.center) to (#3-\thefinestruct.center) -- +(2,0) node (end-#3-\thefinestruct) {};
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+% \subsection{Transitions}
 % A transition. This is kind of the basic macro for nearly everything interesting. I hope it is configurable enough to be really useful. However, key-value is as expandable as one wishes, so the first argument is a key-value list for everyeverything.
 %    \begin{macrocode}
 \DeclareDocumentCommand\transition{sO{} mmm}{
-  \ls_setkeys_trans:n{loc=\int_use:c{transdist},midway,arrow={->},yes}  %% bit of a strange but necessary way to define a default
-  \ls_setkeys_trans:n{#2}
+  \ls_setkeys_trans:n{%
+      loc=\int_use:c{transdist},midway,arrow={->},yes, %% default values
+   #2}  %% user values
 %
 %% construct nodes and draw the thing, define a center at which the photon ends
 %
@@ -373,29 +414,13 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
     \photon[#5]{photonstart}{photonend};
   }
   \bool_if:NF\ls_trans_allowed{
-  \node [cross out,draw = black] (notallowed) at (photonend)
-                                                   {\hspace*{\ls_trans_not_width}\strut};
+    \node [cross out,draw = black] (notallowed) at (photonend)
+              {\hspace*{\ls_trans_not_width}\strut};
   }
 %
   \int_incr:c{transdist}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
 }
 %    \end{macrocode}
-% a set of sublevels at constant distances
-% \begin{macro}{finestruct}
-%    \begin{macrocode}
-\NewDocumentCommand\finestruct{mmm}{
-  \int_set:cn{transdist}{0}
-  \node (finestart) [right=of lastlevel-3]{};
-  \forLoop{1}{#1}{sublevel}{
-    \node (#3-\thesublevel) [%
-      node distance= #2*(-#1/2+(\thesublevel-.5)),%
-      above=of finestart.south%
-      ]{};
-  \draw (lastlevel-3.center) to (#3-\thesublevel.center) -- +(2,0) node (end-#3-\thesublevel) {};
-  }
-}
-%    \end{macrocode}
-% \end{macro}
 % for shifting the transitions by hand
 %    \begin{macrocode}
 \NewDocumentCommand\shifttrans{m}{
@@ -446,12 +471,12 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %% TODO
 }
 %    \end{macrocode}
-% \section{$\Lambda$ scheme}
+% \subsection{$\Lambda$ scheme}
 % The environment |lambdascheme| is usefull to draw a $\Lambda$ shaped niveau system. For example, use it to depicture the EIT effect.
 %    \begin{macrocode}
 \NewDocumentEnvironment{lambdascheme}{}
   {\begin{levelscheme}
-    \tl_set:Nn\ls_levellength{1}
+    \tl_set:Nn\ls_levelwidth{1}
     \tl_set:Nn\ls_lambdaApos{1.5,4}
     \tl_set:Nn\ls_lambdaBpos{3,1}
     \tl_set:Nn\ls_lambdaCpos{0,0}
@@ -462,7 +487,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
     \node (lastlevel) at (\ls_lambdaCpos){};
     \level{lambda-C}
     \cycle{lambda-C}{lambda-A}
-    \shifttrans{-\ls_levellength}
+    \shifttrans{-\ls_levelwidth}
     \cycle{lambda-B}{lambda-A}
   }
   {\end{levelscheme}}
@@ -487,8 +512,8 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 
   \draw (MOT-plus-left) -- (MOT-plus-right);
   \draw (MOT-minus-left) -- (MOT-minus-right);
-  \absorb[loc=0.3*\ls_levellength]{MOT-lower}{MOT-middle}
-  \absorb[right,loc=1.7*\ls_levellength]{MOT-lower}{MOT-upper}
+  \absorb[loc=0.3*\ls_levelwidth]{MOT-lower}{MOT-middle}
+  \absorb[right,loc=1.7*\ls_levelwidth]{MOT-lower}{MOT-upper}
 \end{levelscheme}
 }
 %    \end{macrocode}
@@ -567,10 +592,9 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \begin{itemize}
 % \item sublevels cannot have labels ⇒ give sublevels as pairs, not only numbers ?
 % \item ”snaked“ transitions (relaxations?)
-% \item several columns of levels that can be connected
 % \item some kind of ”zooming“ effect
 % \item pump beams for laser transitions
-% \item levels of a LED
+% \item levels of a LED (solid state energy levels)
 % \item how about some axes with cool features?
 % \item change transition position to a float-kind of object (use  (what?)
 % \item Feshbach resonances
