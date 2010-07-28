@@ -69,13 +69,6 @@ This work conists of this file levelscheme.dtx
   pdftitle=levelscheme
 }
 
-\def\filedate{2010/06/27}
-\def\fileversion{0.a1}
-
-\title{The \textsf{levelscheme} package}
-\author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
-\date{Version \fileversion\ \filedate}
-
 \EnableCrossrefs
 \CodelineIndex
 \RecordChanges
@@ -100,6 +93,14 @@ This work conists of this file levelscheme.dtx
 }
 
 %\OnlyDescription
+
+\def\filedate{2010/06/27}
+\def\fileversion{0.a 2}
+
+\title{The \textsf{levelscheme} package}
+\author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
+\date{Version \fileversion\ \filedate}
+
 \begin{document}
 \maketitle
 This is the package |levelscheme| which tries to offer an easy way of drawing atomic/molecular level schemes with transitions in a \LaTeX document.
@@ -112,7 +113,7 @@ Any comments are welcome! Please help me improve this package!
 This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
 
 \section{Usage}
-You draw levels by using e.\,g. |\level|, give them names and labels and connect them via physical meaningful transitions:
+You draw \hyperref[sec:levels]{levels} by using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful transitions:
 \begin{LTXexample}[caption=A simple example.]
 \begin{levelscheme}
 \level[1]{A}
@@ -127,10 +128,10 @@ You draw levels by using e.\,g. |\level|, give them names and labels and connect
 
 Everything can be adapted to your needs: arrow directions, photon length and direction, positions, distances etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
 
-\subsection{Main Commands}
 There are three classes of commands: Such that represent levels, commands for transitions and potential commands or environments, respectively.
 
-\subsubsection{level}
+\subsection{Drawing Levels}
+\label{sec:levels}
 To allow transitions between levels, every level must have a unique name. This name is given as the mandatory argument of the |\level| command. The optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course.
 
 \DescribeMacro{\level[]\{\}}
@@ -147,7 +148,7 @@ This command draws a bunch of sublevels. These will be right of the given ”mai
 \sublevels{A}{-1,0,1,1.5}
 \end{levelscheme}
 \end{LTXexample}
-\subsubsection{transitions}
+\subsection{Drawing Transitions}
 There are many kinds of possible transitions. For most of them there are special commands. All of them can be adjusted by means of options given in brackets. |\cyle[no]| denotes a forbidden cycling transition. For possible options see section \ref{sec:options}.
 
 All transition commands take three arguments: The first one is an optional argument taking key or key-value pairs. The second and third argument denote the starting and ending level, respectively.
@@ -168,12 +169,43 @@ Dito, without a photon.
 \DescribeMacro{\emit[]\{\}\{\}}
 
 \DescribeMacro{\transition*[]\{\}\{\}}
+This is our working horse. The |\transition| macro does all the work and is thus quite powerful. It is \emph{not} intended for the normal user as it’s syntax is quite complex. Use on of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon. The optional argument can take a lot of options, just to mention some of them:
 
-\subsubsection{Potentials}
+\begin{description}
+\item[no] A not-allowed (i.\,e. forbidden) transition. Marked by crossing out the arrow.
+\item[not allowed] same as [no], but shorter
+\item[yes] the opposite of [no] …
+\item[red, blue, …] some colors (not yet implemented) of the arrow
+\item[near end] causes the photon to appear nearer to the end of the transition than to the middle. This is useful to adjust the position of the photon.
+\item[near start] dito, but for the beginning of the transition
+\item[dir=] denotes the position of the photon relative to the transition arrow; possible values are |left| and |right|.
+\item[left] shorthand for |dir=left|
+\item[right] shorthand for |dir=right|
+\end{description}
+
+\DescribeMacro{\cascadeto*[]\{\}\{\}}
+The cascade macro is very useful if you want to draw decays (or absorbtions …) for several levels. You can just put a number of levels into the third (mandatory) argument, and all of these levels will decay  into (or absorb from or to, whatever) the level given in the last argument. The type of transition can be given in the optional argument, where |\relaxation| is default. The starred version does not shift the transitions horizontally, while the non-starred version does. The starred version is quite nonsense and may vanish the next days …
+
+\DescribeMacro{\cascadeall*[]\{\}}
+Similar to the above macro, but now every given level decays into the next one. So give |{A,B,C}| to draw decay from A to B and from B to C. The starred version does not shift the transitions horizontally, while the non-starred version does.
+
+\begin{LTXexample}[preset={\leveldistance{0.5} \levelwidth{2.5}\shifttrans{-2}}]
+\begin{levelscheme}
+  \level A \level B
+  \level C \level D
+  \cascadeto{A,B,C}D
+  \cascadeall*{A,B,C}D
+\end{levelscheme}
+\end{LTXexample}
+
+\DescribeMacro{\cascadeallto*[]\{\}}
+A quite useless combination of the two above macros. Will lead to unusefull arrows all over your levels.
+
+\subsection{Special: Potentials}
 This package is able to draw several important potentials and to insert levels. They might be at arbitrary positions or even have the correct hight (as in the case of the harmonic oszillator).
 
-\DescribeMacro{HO[]\{\}}
-This makro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
+\DescribeMacro{\HO[]\{\}}
+This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
 
 \subsection{Options}
 \label{sec:options}
@@ -264,6 +296,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % setting up constants/varibles with default values.
 %    \begin{macrocode}
 \bool_new:N\ls_trans_allowed
+\bool_new:N\ls_first_of_cascade
 
 \tl_gset:Nn\c_ls_right{right}
 
@@ -280,18 +313,18 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \tl_set:Nn\ls_trans_decorate_i{}  %% FIXME: please remove this using a meaningful way to pass several options with one macro
 \tl_set:Nn\ls_trans_decorate_ii{}
 
-\int_new:c{transdist}  %% must be changed to some floating number!
-\int_gset:cn{transdist}{1}
-\int_new:c{ls_trans_shift}  %% must be changed to some floating number!
-\int_gset:cn{ls_trans_shift}{1}
+\fp_new:c{transdist}  %% must be changed to some floating number!
+\fp_gset:cn{transdist}{1}
+\fp_new:c{ls_trans_shift}  %% must be changed to some floating number!
+\fp_gset:cn{ls_trans_shift}{1}
 
 \tikzset{ls-decoration/.style={decorate,decoration={snake}}}
 
-\DeclareExpandableDocumentCommand\photonlength{}{1.5}
+\DeclareExpandableDocumentCommand\photonlength{}{1.2}
 \DeclareExpandableDocumentCommand\finestructlength{}{2}
 
-\newcounter{finestruct}  %% here for the for-loop anywhere, as that package does not get clear with expl3-counts
-\newcounter{HOlevel}   %% here for the for-loop in the harmonic oszillator
+\newcounter{finestruct}  %% needed bye the for-loop of sublevels  (?) anywhere, as that package does not get clear with expl3-counts
+\newcounter{HOlevel}   %% needed by the for-loop in the harmonic oszillator
 
 %    \end{macrocode}
 % User level macros to set them
@@ -302,11 +335,9 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \DeclareDocumentCommand\levelwidth{m}{
   \tl_gset:Nn\ls_levelwidth{#1}
 }
-
 \DeclareDocumentCommand\sublevelwidth{m}{
   \tl_gset:Nn\ls_sublevelwidth{#1}
 }
-
 \DeclareDocumentCommand\subleveldistance{m}{
   \tl_gset:Nn\ls_subleveldistance{#1}
 }
@@ -333,7 +364,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
     \draw [\ls_level_style] (#2.center) -- (#2-3.center);
     \node (lastlevel) at (#2) {};
     \node (lastlevel-3) at (#2-3){};
-    \int_set:cn{transdist}{1}  %% return to normal distance
+    \fp_set:cn{transdist}{1}  %% return to normal distance
   \end{scope}
 }
 
@@ -385,7 +416,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \begin{macro}{finestruct}
 %    \begin{macrocode}
 \NewDocumentCommand\finestruct{mmm}{
-  \int_set:cn{transdist}{0}
+  \fp_set:cn{transdist}{0}
   \node (finestart) [right=of lastlevel-3]{};
   \forLoop{1}{#1}{finestruct}{
     \node (#3-\thefinestruct) [%
@@ -402,7 +433,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \begin{macrocode}
 \DeclareDocumentCommand\transition{sO{}O{}mmm}{
   \ls_setkeys_trans:n{%
-      loc=\int_use:c{transdist},midway,arrow={->},yes, %% default values
+      loc=\fp_use:c{transdist},midway,arrow={->},yes, %% default values
    #2}  %% user values
 %
 %% construct nodes and draw the thing, define a center at which the photon ends
@@ -414,7 +445,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %% calculate the beginning of the photon, depending wether it comes/goes to/from left or right
 %
   \IfBooleanTF{#1}{}{ %% is there a photon in this transition? i.e. no star given
-  \tl_if_eq:NNTF\ls_trans_dir\c_ls_right  %% does the photon come from right or left?
+  \tl_if_eq:ccTF{ls_trans_dir}{c_ls_right}  %% does the photon come from right or left?
       {\node [node distance = \photonlength](photonstart) [right=of photonend] {};}
       {\node [node distance = \photonlength](photonstart) [left=of photonend]   {};}
     \photon[#6]{photonstart}{photonend};
@@ -424,19 +455,23 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
               {\hspace*{\ls_trans_not_width}\strut};
   }
 %
-  \int_add:Nn\transdist{\ls_trans_shift}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
+  \fp_gadd:Nn\transdist{\ls_trans_shift}  %% and shift the next transition so they will not overlap. Has to be adjusted for left/right
 }
 %    \end{macrocode}
 % for shifting/not shifting the transitions by hand
 %    \begin{macrocode}
 \NewDocumentCommand\shifttrans{m}{
-  \int_add:cn{transdist}{#1}
+  \fp_gadd:cn{transdist}{#1}
 }
 \NewDocumentCommand\shiftdist{m}{
-  \int_gset:cn{ls_trans_shift}{#1}
+  \fp_gset:cn{ls_trans_shift}{#1}
 }
 \NewDocumentCommand\stopshift{}{
-  \int_gset:cn{ls_trans_shift}{0}
+  \fp_gset:cn{ls_trans_shift_last}{\ls_trans_shift}
+  \fp_gset:cn{ls_trans_shift}{0}
+}
+\NewDocumentCommand\resumeshift{}{
+  \fp_gset:cn{ls_trans_shift}{\ls_trans_shift_last}
 }
 %    \end{macrocode}
 % a transition with arrows at both sides to indicate that a cyled transition is meant; with or without photon
@@ -454,7 +489,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % a single photon from node 1 to node 2
 %    \begin{macrocode}
 \NewDocumentCommand\photon{O{->}mm}{
-  \draw [#1,decorate,decoration={snake,pre length=6pt,post length=2pt}] (#2) -- (#3);
+  \draw [#1,decorate,decoration={snake,pre length=2,post length=4}] (#2) -- (#3);
 }
 %    \end{macrocode}
 % absorbtion of a photon, a special transition
@@ -469,18 +504,60 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   \transition[#1]{#2}{#3}{<-}
 }
 %    \end{macrocode}
-% induced emission as needed for a laser. Not yet implemented.
+% Induced emission. The alignment of the photons is quite suboptimal. There needs to be a more flexible interface to photons.
 %    \begin{macrocode}
 \NewDocumentCommand\indemit{O{midway,dir=right}mm}{
-  \transition[#1]{#2}{#3}{<-}
-  \photon{1,1}{2,2}
-%% TODO
+  \stopshift
+  \absorb{#2}{#3}
+  \emit{#2}{#3}
+  \tl_set:Nn\ls_ind_photondist{0.15}
+  \node (photonend) at (photonend) [above=\ls_ind_photondist] {};
+  \node (photonstart) at (photonstart) [above=\ls_ind_photondist] {};
+  \photon{photonend}{photonstart}
+  \resumeshift
 }
 %    \end{macrocode}
 % photonless transition
 %    \begin{macrocode}
 \NewDocumentCommand\relaxation{O{midway,dir=right}mm}{
   \transition*[#1][ls-decoration]{#2}{#3}{<-}
+}
+%    \end{macrocode}
+% If decay into several levels is possible, you don’t have to do alle stuff by hand, but rather use this one:
+%    \begin{macrocode}
+\NewDocumentCommand\cascadeto{sO{\relaxation}mm}{
+  \IfBooleanT #1 {\stopshift}
+  \foreach \x in {#3}{%
+    #2{\x}{#4}
+  }
+}
+%    \end{macrocode}
+% It‘s also possible to decay step by step one after the other. This can be done with the following:
+%    \begin{macrocode}
+\NewDocumentCommand\cascadeall{sO{\relaxation}mm}{
+  \IfBooleanT #1 {\stopshift}
+  \bool_set_true:N\ls_first_of_cascade  
+  \foreach \x in {#3}{%
+  \bool_if:NTF\ls_first_of_cascade
+    {\bool_gset_false:N\ls_first_of_cascade}
+    {#2{lastcasclevel}{\x}}
+     \node (lastcasclevel) at (\x){};
+  }
+  #2{lastcasclevel}{#4}
+}
+%    \end{macrocode}
+% Last and least: A not-so-useful offer to combine the above macros. The output is ugly, thoug …
+%    \begin{macrocode}
+\NewDocumentCommand\cascadeallto{sO{\relaxation}mm}{
+  \IfBooleanT #1 {\stopshift}
+  \bool_set_true:N\ls_first_of_cascade  
+  \foreach \x in {#3}{%
+  \bool_if:NTF\ls_first_of_cascade
+    {\bool_gset_false:N\ls_first_of_cascade}
+    {#2{lastcasclevel}{\x}}
+     \node (lastcasclevel) at (\x){};
+     #2{lastcasclevel}{#4}
+  }
 }
 %    \end{macrocode}
 % \subsection{$\Lambda$ scheme}
@@ -523,6 +600,14 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \end{macrocode}
 % \section{Potentials}
 %The macros presented in this section enable you to draw some of the typical potentials needed in atomic and molecular physics. Plans are to implement a hormonic potential, Morse potential, Lennard-Jones potential, a gaussian potential (optical dipole trap) and a linear potential. This is \emph{not} intended for rigorous calculations and scientific things, just for sketching. If you need exakt forms of potentials and level distances, go for a professional program.
+%\subsection{He-Ne laser}
+%Typeset your own laser! The command  |\HeNelaser| does most of the work for you!
+%    \begin{macrocode}
+\NewDocumentCommand\HeNelaser{}{
+%%% what is needed here? …
+
+}
+%    \end{macrocode}
 %\subsection{MOT}
 %    \begin{macrocode}
 \NewDocumentCommand\MOT{}{
@@ -615,18 +700,20 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \begin{itemize}
 % \item wtf is wrong with the index?!
 % \item MOT beams should be aligned and all at same hight
+% \item photons in induced emission should be vertically centered (symmetrically)
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
 % \end{itemize}
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
+% \item be so kind and offer a way to draw a whole He-Ne laser level scheme :)
+% \item improve spacing of photons (they are too narrow to the transition)
 % \item do labels using the label mechanism of tizk instead of stupidly llap (but how – tikz example on p. 42 does not work!)
 % \item free positioning of levels (length, horizontal pos)
-% \item sublevels cannot have labels -> give sublevels as pairs, not only numbers ?
+% \item sublevels cannot have labels -> call as |\sublevels{(1 a),(2 b)}| etc. Parse this to a macro that checks for brace – if not, print level at given number, if so, extract first argument and label with second one.
 % \item pump beams for laser transitions
 % \item levels of a LED (solid state energy levels)
 % \item how about some axes with cool features?
-% \item change transition position to a float-kind of object (use  (what?)
 % \item Feshbach resonances
 % \item something for “cascades“, i.\,e. falling over several levels or many levels falling on the same – so to save keystrokes etc.
 % \item implement colors (e.\,g. Na, Li)
