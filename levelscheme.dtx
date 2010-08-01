@@ -263,7 +263,13 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   near~start.meta:n = {pos=near~start},
   no.code:n = \bool_set_false:N\ls_trans_allowed,
   not~allowed.meta:n = {no},
-  yes.code:n = \bool_set_true:N\ls_trans_allowed
+  yes.code:n = \bool_set_true:N\ls_trans_allowed,
+  color.code:n = \tl_set:Nn\ls_level_color{#1},
+  thickness.code:n = \tl_set:Nn\ls_level_thick{#1},
+  thick.meta :n = {thickness = thick},
+  very~thick.meta :n = {thickness = very~thick},
+  thin.meta :n = {thickness = thin},
+  very~thin.meta :n = {thickness = very~thin},
 }
 
 \keys_define:nn{ls_pot}{
@@ -310,8 +316,10 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \tl_set:Nn\ls_trans_not_height{2ex} %% not yet used
 
 \tl_set:Nn\ls_level_style{}
-\tl_set:Nn\ls_trans_decorate_i{}  %% FIXME: please remove this using a meaningful way to pass several options with one macro
-\tl_set:Nn\ls_trans_decorate_ii{}
+\tl_set:Nn\ls_level_thick{thick}
+\tl_set:Nn\ls_trans_thick{thin}
+
+\tl_set:Nn\ls_level_color{black}
 
 \fp_new:c{transdist}  %% must be changed to some floating number!
 \fp_gset:cn{transdist}{1}
@@ -341,6 +349,15 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \DeclareDocumentCommand\subleveldistance{m}{
   \tl_gset:Nn\ls_subleveldistance{#1}
 }
+\DeclareDocumentCommand\levelcolor{m}{
+  \tl_gset:Nn\ls_level_color{#1}
+}
+\DeclareDocumentCommand\levelthickness{m}{
+  \tl_gset:Nn\ls_level_thick{#1}
+}
+\DeclareDocumentCommand\transitionthickness{m}{
+  \tl_gset:Nn\ls_trans_thick{#1}
+}
 \ExplSyntaxOff
 %    \end{macrocode}
 % \section{Level Scheme}
@@ -355,25 +372,33 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 {
   \end{tikzpicture}
 }
-% 
+%    \end{macrocode}
+% One of the two most important macros: |\level|. Guess what it does ;)
+%    \begin{macrocode}
 \DeclareDocumentCommand\level{O{}m}{
   \begin{scope}[node distance = \ls_leveldistance and \ls_levelwidth]
     \node (#2) [below=of lastlevel] {\llap{#1\ }};
     \node (#2-2) [right=of #2] {};
     \node (#2-3) [right=of #2-2] {};
-    \draw [\ls_level_style] (#2.center) -- (#2-3.center);
+    \draw [\ls_level_thick,\ls_level_color,\ls_level_style] (#2.center) -- (#2-3.center);
     \node (lastlevel) at (#2) {};
     \node (lastlevel-3) at (#2-3){};
     \fp_set:cn{transdist}{1}  %% return to normal distance
   \end{scope}
 }
-
+%% a minor level, i.e. this one is drawn thinner than the others
+\DeclareDocumentCommand\minorlevel{O{}m}{
+  \tl_set:Nn\ls_level_style{thin}
+  \level[#1]{#2}
+  \tl_set:Nn\ls_level_style{}
+}
+%% virtual level that does not really exist. But anyhow it does … or not  … whatever, it is dashed!
 \DeclareDocumentCommand\virtuallevel{O{}m}{
   \tl_set:Nn\ls_level_style{dashed}
   \level[#1]{#2}
   \tl_set:Nn\ls_level_style{}
 }
-
+%% 
 \DeclareDocumentCommand\nolevel{O{}m}{
   \tl_set:Nn\ls_level_style{white}
   \level[#1]{#2}
@@ -455,7 +480,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %
   \node (translow) [node distance = \ls_trans_loc ,right=of #4] {};
   \node (transup) [node distance = \ls_trans_loc,right=of #5] {};
-  \draw [\ls_trans_arrow,#3] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
+  \draw [\ls_trans_arrow,#3,\ls_trans_thick] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
 %
 %% calculate the beginning of the photon, depending wether it comes/goes to/from left or right
 %
@@ -721,6 +746,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \section{Known Bugs}
 % This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
+% \item emission changes direction when given optional argument!
 % \item wtf is wrong with the index?!
 % \item MOT beams should be aligned and all at same hight
 % \item photons in induced emission should be vertically centered (symmetrically)
@@ -729,7 +755,6 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
-% \item thickness of lines (different for levels and transitions)
 % \item be so kind and offer a way to draw a whole He-Ne laser level scheme :)
 % \item improve spacing of photons (they are too narrow to the transition)
 % \item do labels using the label mechanism of tizk instead of stupidly llap (but how – tikz example on p. 42 does not work!)
