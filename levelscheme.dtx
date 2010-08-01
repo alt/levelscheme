@@ -4,9 +4,14 @@
 \iffalse
 %</internal>
 %<*readme>
-levelscheme tries to offer an easy way of drawing atomic/molecular level schemes in a LaTeX document.
+# levelscheme
+levelscheme is a LaTeX package that tries to offer an easy way of drawing atomic and molecular level schemes in a LaTeX document.
 
+## installation
 The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any up-to-date LaTeX-flavour.
+
+## requirements
+This package requires the expl3 packages, xparse and the TikZ bundle. Make shure all are installed and up to date.
 
 Any comments and suggestions are welcome! Help me improve this package!
 
@@ -94,18 +99,20 @@ This work conists of this file levelscheme.dtx
 
 %\OnlyDescription
 
-\def\filedate{2010/06/27}
-\def\fileversion{0.a 2}
+\def\filedate{2010/08/01}
+\def\fileversion{0.1a}
 
 \title{The \textsf{levelscheme} package}
 \author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
-\date{Version \fileversion\ \filedate}
+\date{Version \fileversion,\ \filedate}
 
 \begin{document}
 \maketitle
-This is the package |levelscheme| which tries to offer an easy way of drawing atomic/molecular level schemes with transitions in a \LaTeX document.
+\begin{abstract}
+The package |levelscheme| tries to offer an easy way of drawing atomic or molecular level schemes. You can connect levels with different transitions, all by a very simple interface with many possibilities of changing the way everything looks.
  
-Any comments are welcome! Please help me improve this package!
+Any comments are welcome; please help me improve this package or its documentation. If you have suggestions regarding the user interface or want any special cool feature implemented, just mail me!
+\end{abstract}
 \tableofcontents
 \newpage
 \part{Documentation}
@@ -113,31 +120,41 @@ Any comments are welcome! Please help me improve this package!
 This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
 
 \section{Usage}
-You draw \hyperref[sec:levels]{levels} by using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful transitions:
-\begin{LTXexample}[caption=A simple example.]
+You draw \hyperref[sec:levels]{levels} using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful \hyperref[sec:transitions]{transitions}:
+\begin{LTXexample}[caption=A simple example.,preset={\vspace*{-10ex}\shifttrans{-.5}}]
 \begin{levelscheme}
 \level[1]{A}
 \virtuallevel[3]{B}
-\level[2]{C}
-\absorb BA
-\shifttrans{-1}
-\absorb BC
-\nophotoncycle[no,near end] AC
+\level[2][color=red] {C}
+\absorb[color=green] BA
+\shifttrans{-.5}
+\emit BC
+\shifttrans{.8}
+\nophotoncycle[no,near end,color=blue] AC
 \end{levelscheme}
 \end{LTXexample}
 
-Everything can be adapted to your needs: arrow directions, photon length and direction, positions, distances etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
+You have many options to change everything to your needs: arrow directions, photon length and direction, positions, distances, colors, thickness etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
 
-There are three classes of commands: Such that represent levels, commands for transitions and potential commands or environments, respectively.
+There are three classes of commands: Such that represent \hyperref[sec:levels]{levels}, commands for \hyperref[sec:transitions]{transitions} and  commands or environments for \hyperref[sec:potentials]{potentials}, respectively.
 
-\subsection{Drawing Levels}
+\subsection{Levels}
 \label{sec:levels}
-To allow transitions between levels, every level must have a unique name. This name is given as the mandatory argument of the |\level| command. The optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course.
+To allow transitions between levels, every level must have a unique name. This name is given as the mandatory argument of the |\level| command.
 
-\DescribeMacro{\level[]\{\}}
+All level commands take \emph{two} optional arguments: the first optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course. The second optional argument takes options for that level and can be given as key-value or keys only. (see section \ref{sec:leveloptions}
+
+\DescribeMacro{\level[][]\{\}}
 Draws a line that represents an energy level. Takes two arguments, the second being the unique name of the level. The first argument is optional and contains a label to be printed next to the level.
-\DescribeMacro{\virtuallevel[]\{\}}
-Same as above, but with a dashed line to depict a virtual level.
+
+\DescribeMacro{\minorlevel[][]\{\}}
+Same as normal |\level|, but with a thin stroke. This way you can have a better overview of your levels and emphasize important levels. Use with care as too many different stroke types will confuse the reader!
+
+\DescribeMacro{\virtuallevel[][]\{\}}
+A level that does not exist in some way, but does in another … however, it is dashed. Useful e.\,g. for Raman transitions.
+
+\DescribeMacro{\nolevel[][]\{\}}
+This does not exist at all. Nevertheless you can draw transitions to this level. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
 
 \DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
 This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |second|) and vertically shifted with respect to that one by the given numbers.
@@ -148,40 +165,48 @@ This command draws a bunch of sublevels. These will be right of the given ”mai
 \sublevels{A}{-1,0,1,1.5}
 \end{levelscheme}
 \end{LTXexample}
-\subsection{Drawing Transitions}
-There are many kinds of possible transitions. For most of them there are special commands. All of them can be adjusted by means of options given in brackets. |\cyle[no]| denotes a forbidden cycling transition. For possible options see section \ref{sec:options}.
+
+\subsection{Transitions}
+\label{sec:transitions}
+There are many kinds of possible transitions. For most of them there are special commands. All of them can be adjusted by means of options given in brackets. |\cyle[no]| denotes a forbidden cycling transition. For possible options see section \ref{sec:transoptions} below.
 
 All transition commands take three arguments: The first one is an optional argument taking key or key-value pairs. The second and third argument denote the starting and ending level, respectively.
 
-\DescribeMacro{\absorb[]\{\}\{\}}
-Depicts an absorption process, i.\,e. an arrow directing from the first level to the second one with a photon running ”inwards“.
+The ”time axis“ is taken from left to right, therefore an absorbed photon is coming from the left, an emitted photon is going to the right. This can be changed via options.
 
+\DescribeMacro{\absorb[]\{\}\{\}}
+Depicts an absorption process, i.\,e. an arrow directing from the first level to the second one with a photon running ”inwards“. By default, the photon comes from the right and is absorbed in the middle of the transition.
 
 \DescribeMacro{\emit[]\{\}\{\}}
-Same as above, emits a photon.
+Same as above, emits a photon. The photon goes to the right by default.
 
 \DescribeMacro{\cycle[]\{\}\{\}}
-Connects two states via an bidirectional arrow, with a photon.
+Connects two states via an bidirectional arrow, with a photon. The photon is coming from the left. This might be inconsequent and so it is.
 
 \DescribeMacro{\nophotoncycle[]\{\}\{\}}
 Dito, without a photon.
 
-\DescribeMacro{\emit[]\{\}\{\}}
-
 \DescribeMacro{\transition*[]\{\}\{\}}
-This is our working horse. The |\transition| macro does all the work and is thus quite powerful. It is \emph{not} intended for the normal user as it’s syntax is quite complex. Use on of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon. The optional argument can take a lot of options, just to mention some of them:
+This is our working horse. The |\transition| macro does all the work and is thus quite powerful. It is \emph{not} intended for the normal user as it’s syntax is quite complex. Use on of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon.
+
+\subsection{Options for Levels}
+
+\subsection{Options for Transitions}
+\label{sec:transoptions}
+Options are given to the commands in square brackets |[]|. This is mostly done by a key-value or key only interface. Some options can be set using special macros (e.\,g. for global options that affect all following transitions or levels etc.)
 
 \begin{description}
-\item[no] A not-allowed (i.\,e. forbidden) transition. Marked by crossing out the arrow.
-\item[not allowed] same as [no], but shorter
-\item[yes] the opposite of [no] …
-\item[red, blue, …] some colors (not yet implemented) of the arrow
+\item[no] A forbidden transition. This will cross out the transition arrow.
+\item[not allowed] same as [no].
+\item[yes] the opposite of [no]. (this way you can force the existence of a photon)
+\item[color=] color of the transition-arrow. The photon stays (yet) black.
 \item[near end] causes the photon to appear nearer to the end of the transition than to the middle. This is useful to adjust the position of the photon.
 \item[near start] dito, but for the beginning of the transition
 \item[dir=] denotes the position of the photon relative to the transition arrow; possible values are |left| and |right|.
 \item[left] shorthand for |dir=left|
 \item[right] shorthand for |dir=right|
 \end{description}
+
 
 \DescribeMacro{\cascadeto*[]\{\}\{\}}
 The cascade macro is very useful if you want to draw decays (or absorbtions …) for several levels. You can just put a number of levels into the third (mandatory) argument, and all of these levels will decay  into (or absorb from or to, whatever) the level given in the last argument. The type of transition can be given in the optional argument, where |\relaxation| is default. The starred version does not shift the transitions horizontally, while the non-starred version does. The starred version is quite nonsense and may vanish the next days …
@@ -202,14 +227,11 @@ Similar to the above macro, but now every given level decays into the next one. 
 A quite useless combination of the two above macros. Will lead to unusefull arrows all over your levels.
 
 \subsection{Special: Potentials}
+\label{sec:potentials}
 This package is able to draw several important potentials and to insert levels. They might be at arbitrary positions or even have the correct hight (as in the case of the harmonic oszillator).
 
 \DescribeMacro{\HO[]\{\}}
 This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
-
-\subsection{Options}
-\label{sec:options}
-Most of the commands can be tuned to fit the user’s needs. This is mostly done by a key-value interface, but also some macros are used to set important variables. This all will most probably change in the near future, so no documentation so far.
 
 \StopEventually{}
 \clearpage
@@ -264,6 +286,15 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
   no.code:n = \bool_set_false:N\ls_trans_allowed,
   not~allowed.meta:n = {no},
   yes.code:n = \bool_set_true:N\ls_trans_allowed,
+  color.code:n = \tl_set:Nn\ls_trans_color{#1},
+  thickness.code:n = \tl_set:Nn\ls_trans_thick{#1},
+  thick.meta :n = {thickness = thick},
+  very~thick.meta :n = {thickness = very~thick},
+  thin.meta :n = {thickness = thin},
+  very~thin.meta :n = {thickness = very~thin},
+}
+
+\keys_define:nn{ls_level}{
   color.code:n = \tl_set:Nn\ls_level_color{#1},
   thickness.code:n = \tl_set:Nn\ls_level_thick{#1},
   thick.meta :n = {thickness = thick},
@@ -288,6 +319,12 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \begin{macrocode}
 \cs_new:Nn\ls_setkeys_trans:n{%
   \keys_set:nn{ls_trans}{#1}
+}
+%    \end{macrocode}
+% intern command to set keys (levels only)
+%    \begin{macrocode}
+\cs_new:Nn\ls_setkeys_level:n{%
+  \keys_set:nn{ls_level}{#1}
 }
 %    \end{macrocode}
 % user level command
@@ -320,6 +357,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 \tl_set:Nn\ls_trans_thick{thin}
 
 \tl_set:Nn\ls_level_color{black}
+\tl_set:Nn\ls_trans_color{black}
 
 \fp_new:c{transdist}  %% must be changed to some floating number!
 \fp_gset:cn{transdist}{1}
@@ -375,14 +413,15 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \end{macrocode}
 % One of the two most important macros: |\level|. Guess what it does ;)
 %    \begin{macrocode}
-\DeclareDocumentCommand\level{O{}m}{
+\DeclareDocumentCommand\level{O{}O{}m}{  %% 1ˢᵗ arg = label, 2ⁿᵈ arg = options
+  \ls_setkeys_level:n{#2}
   \begin{scope}[node distance = \ls_leveldistance and \ls_levelwidth]
-    \node (#2) [below=of lastlevel] {\llap{#1\ }};
-    \node (#2-2) [right=of #2] {};
-    \node (#2-3) [right=of #2-2] {};
-    \draw [\ls_level_thick,\ls_level_color,\ls_level_style] (#2.center) -- (#2-3.center);
-    \node (lastlevel) at (#2) {};
-    \node (lastlevel-3) at (#2-3){};
+    \node (#3) [below=of lastlevel] {\llap{#1\ }};
+    \node (#3-2) [right=of #3] {};
+    \node (#3-3) [right=of #3-2] {};
+    \draw [\ls_level_thick,\ls_level_color,\ls_level_style] (#3.center) -- (#3-3.center);
+    \node (lastlevel) at (#3) {};
+    \node (lastlevel-3) at (#3-3){};
     \fp_set:cn{transdist}{1}  %% return to normal distance
   \end{scope}
 }
@@ -480,7 +519,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %
   \node (translow) [node distance = \ls_trans_loc ,right=of #4] {};
   \node (transup) [node distance = \ls_trans_loc,right=of #5] {};
-  \draw [\ls_trans_arrow,#3,\ls_trans_thick] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
+  \draw [\ls_trans_arrow,\ls_trans_color,#3,\ls_trans_thick] (translow.center) -- (transup.center) node (photonend)[\ls_trans_pos]{};
 %
 %% calculate the beginning of the photon, depending wether it comes/goes to/from left or right
 %
@@ -540,8 +579,8 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \end{macrocode}
 % emission of a photon, another special transition
 %    \begin{macrocode}
-\NewDocumentCommand\emit{O{midway,dir=right}mm}{
-  \transition[#1]{#2}{#3}{<-}
+\NewDocumentCommand\emit{O{midway}mm}{
+  \transition[right,#1]{#2}{#3}{<-}
 }
 %    \end{macrocode}
 % Induced emission. The alignment of the photons is quite suboptimal. There needs to be a more flexible interface to photons.
@@ -746,7 +785,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \section{Known Bugs}
 % This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
-% \item emission changes direction when given optional argument!
+% \item |sublevels| is totally f***ed up!
 % \item wtf is wrong with the index?!
 % \item MOT beams should be aligned and all at same hight
 % \item photons in induced emission should be vertically centered (symmetrically)
