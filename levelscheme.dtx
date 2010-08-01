@@ -382,31 +382,46 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %    \end{macrocode}
 % A number of sublevels of given distances
 %    \begin{macrocode}
+%% first, a helper macro (there should be much more of these here around!)
+\DeclareDocumentCommand\extractlabels{}{
+  
+}
+\cs_new:Nn\ls_onesublevel:n{
+  \node(mytest){\argi, \argii, \argiii, außerdem #1};
+}
+%% then the main macro
 \DeclareDocumentCommand\sublevels{O{lastlevel-3}mm}
 {
   \node (sublevelstart) [right=of #1.center]{};
-  \foreach \x in {#3}{%
-    \node (#2-tmp) [%
-      node distance= \x*\ls_subleveldistance,%
-      above=of sublevelstart.south%
-      ]{};
-    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevelwidth,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
-  }
+\def\argii{#2}
+\def\argi{#1}
+\def\argiii{#3}
+  \clist_map_function:nN{#3}{\ls_onesublevel:n}
+%  \foreach \x in {#3}{%
+%%%\cs_new:Nn\ls_onesublevel:nnn{
+%%%    \node (#2-tmp) [%
+%%%      node distance= \x*\ls_subleveldistance,%
+%%%      above=of sublevelstart.south%
+%%%      ]{};
+%%%    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevelwidth,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
+%%%  }
 }
 %    \end{macrocode}
 % An attempt to implement the possibility to use several columns of levels, e.\,g. for para- and ortho-Helium. Not yet useable.
 %    \begin{macrocode}
-\DeclareDocumentCommand\levelcolumns{m}
+\DeclareDocumentCommand\levelcolumns{O{1.5}O{3}m}
+%% first argument: relative width of levels: width = 1.5/m*levelwidth
+%% second argument: relative shift (horizontal) of levels: distance = 1.5/m*levelwidth
 {
-  \tikz{node distance = 0.9 and 0.9}
-  \tl_set:Nn\ls_levelwidth{0.8}
+  \tl_set:Nx\ls_levelwidth{\ls_levelwidth*#1/#3}
+  \tl_set:Nx\ls_levelcolumnshift{\ls_levelwidth*#2}
   \node (columnuppernode) at (lastlevel) {};
   \node (columnuppernode-2) [right=of columnuppernode] {};
   \node (columnuppernode-3) [right=of columnuppernode-2] {};
 }
 \DeclareDocumentCommand\nextlevelcolumn{}
 {
-  \node (columnuppernode) [right=of columnuppernode-3]{};
+  \node (columnuppernode) [right=\ls_levelcolumnshift of columnuppernode]{};
   \node (columnuppernode-2) [right=of columnuppernode] {};
   \node (columnuppernode-3) [right=of columnuppernode-2] {};
   \node (lastlevel) at (columnuppernode) {};
@@ -489,7 +504,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % a single photon from node 1 to node 2
 %    \begin{macrocode}
 \NewDocumentCommand\photon{O{->}mm}{
-  \draw [#1,decorate,decoration={snake,pre length=2,post length=4}] (#2) -- (#3);
+  \draw [#1,decorate,decoration={snake,pre length=4,post length=4}] (#2) -- (#3);
 }
 %    \end{macrocode}
 % absorbtion of a photon, a special transition
@@ -604,8 +619,16 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 %Typeset your own laser! The command  |\HeNelaser| does most of the work for you!
 %    \begin{macrocode}
 \NewDocumentCommand\HeNelaser{}{
-%%% what is needed here? …
-
+\level{hene-heground}
+\level{hene-he2¹s}
+\level{hene-he2¹s}
+\level{hene-he2³s}
+\level{hene-ne3s}
+\level{hene-he2s}
+\level{hene-ne3p}
+\level{hene-ne2p}
+\level{hene-ne2¹s}
+\level{hene-neground}
 }
 %    \end{macrocode}
 %\subsection{MOT}
@@ -706,6 +729,7 @@ Most of the commands can be tuned to fit the user’s needs. This is mostly done
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
+% \item thickness of lines (different for levels and transitions)
 % \item be so kind and offer a way to draw a whole He-Ne laser level scheme :)
 % \item improve spacing of photons (they are too narrow to the transition)
 % \item do labels using the label mechanism of tizk instead of stupidly llap (but how – tikz example on p. 42 does not work!)
