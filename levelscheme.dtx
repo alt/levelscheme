@@ -154,12 +154,12 @@ Same as normal |\level|, but with a thin stroke. This way you can have a better 
 A level that does not exist in some way, but does in another … however, it is dashed. Useful e.\,g. for Raman transitions.
 
 \DescribeMacro{\nolevel[][]\{\}}
-This does not exist at all. Nevertheless you can draw transitions to this level. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
+Such a level does not exist at all. Nevertheless you can draw transitions to it. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
 
 \DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
-This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |second|) and vertically shifted with respect to that one by the given numbers.
+This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |A|) and vertically shifted with respect to that one by the given numbers.
 
-\begin{LTXexample}[preset={\sublevelwidth{1}\levelwidth{0.5}}]
+\begin{LTXexample}[title={A totally messed up and buggy code … this will hopefully be corrected!},preset={\sublevelwidth{1}\levelwidth{0.5}}]
 \begin{levelscheme}
 \level{A}
 \sublevels{A}{-1,0,1,1.5}
@@ -189,7 +189,18 @@ Dito, without a photon.
 \DescribeMacro{\transition*[]\{\}\{\}}
 This is our working horse. The |\transition| macro does all the work and is thus quite powerful. It is \emph{not} intended for the normal user as it’s syntax is quite complex. Use on of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon.
 
+\section{Options}
 \subsection{Options for Levels}
+\label{sec:leveloptions}
+\begin{description}
+\item[color=] color of the level.
+\item[thickness=] thickness of the level. Can take the following values which can also be given alone as shorthand:
+\item[thick] draws a thick level
+\item[very thick] draws a very thick levl
+\item[thin] draws a thin level (default for minorlevel)
+\item[very thin] draws a very thin level (be careful, this might not be rendered correctly on your screen and may look totally different when printed!)
+\item[…] …
+\end{description}
 
 \subsection{Options for Transitions}
 \label{sec:transoptions}
@@ -226,12 +237,24 @@ Similar to the above macro, but now every given level decays into the next one. 
 \DescribeMacro{\cascadeallto*[]\{\}}
 A quite useless combination of the two above macros. Will lead to unusefull arrows all over your levels.
 
-\subsection{Special: Potentials}
+\subsection{Potentials}
 \label{sec:potentials}
-This package is able to draw several important potentials and to insert levels. They might be at arbitrary positions or even have the correct hight (as in the case of the harmonic oszillator).
+This package is able to draw several important potentials and to insert levels. These might be at arbitrary hight or even have the correct position (as in the case of the harmonic oszillator).
 
 \DescribeMacro{\HO[]\{\}}
 This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
+
+\DescribeMacro{Lennard-Jones}
+Draws a Lennard-Jones potential. Levels can be included using some cool macro that is not yet really implemented.
+\DescribeMacro{Morse}
+Draws a Morse potential. Levels can be included using some cool macro that is not yet really implemented.
+\DescribeMacro{Whatever potential}
+This could be a nice improvement of the package: The user could offer the potential funection \emph{end} it’s inverted function, and this package draws the potential as well as levels at a given hight.
+
+\subsection{Coolness: Special features}
+These are just some pre-coded things that are often used. All of the following schemes can be drawn with the user level macros above, but as they might be used quite often, they are given here. If you don’t like the way they are implemented, just copy the code and use it the way you like. If you have a nice change in something, please let me know it, I’d love to offer alternative solutions for special needs.
+\DescribeMacro{lambdascheme}
+\DescribeMacro{EIT}
 
 \StopEventually{}
 \clearpage
@@ -743,6 +766,7 @@ This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant level
   }
   \end{tikzpicture}
 }
+\ExplSyntaxNamesOff
 %    \end{macrocode}
 %\subsection{Lennard-Jones potential}
 %    \begin{macrocode}
@@ -765,7 +789,6 @@ This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant level
 }{
   \end{tikzpicture}
 }
-\ExplSyntaxNamesOff
 %    \end{macrocode}
 %\subsection{Morse potential}
 %    \begin{macrocode}
@@ -779,6 +802,25 @@ This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant level
   \end{tikzpicture}
 }
 %    \end{macrocode}
+% \subsection{Whatever potential}
+% The user gives the function of a potential and it‘s inverted function. Then this environment draws the potential itself and a special level-macro draws levels at a given hight. Man, that’s awesome!
+%    \begin{macrocode}
+\NewDocumentEnvironment{whateverpotential}{D(){1:3}mmm}
+{
+  \gdef\lsinvertpotleft{#3}  
+  \gdef\lsinvertpotright{#4}  
+  \begin{tikzpicture}[domain=#1]
+    \draw plot[smooth] (\x,#2){};
+%%%    \draw plot[smooth] (\x,{\x}){};
+}{
+  \end{tikzpicture}
+}
+\NewDocumentCommand\potentiallevel{mO{\lsinvertpotleft}O{\lsinvertpotright}}{  %% hight, inverse function for left and for right point
+%% function given as f(\x), so \def\x{#1} ?
+    \def\x{#1}
+    \draw ({#2},#1) -- ({#3},#1){};
+}
+%    \end{macrocode}
 % \clearpage
 % \appendix
 % \part{Appendix}
@@ -787,6 +829,7 @@ This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant level
 % \begin{itemize}
 % \item |sublevels| is totally f***ed up!
 % \item wtf is wrong with the index?!
+% \item HeNe is not ready …
 % \item MOT beams should be aligned and all at same hight
 % \item photons in induced emission should be vertically centered (symmetrically)
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
@@ -794,18 +837,18 @@ This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant level
 % \section{todo – missing features}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
-% \item be so kind and offer a way to draw a whole He-Ne laser level scheme :)
 % \item improve spacing of photons (they are too narrow to the transition)
-% \item do labels using the label mechanism of tizk instead of stupidly llap (but how – tikz example on p. 42 does not work!)
+% \item do labels using the label mechanism of tizk instead of stupidly do llap (but how – tikz example on p. 42 does not work!)
 % \item free positioning of levels (length, horizontal pos)
 % \item sublevels cannot have labels -> call as |\sublevels{(1 a),(2 b)}| etc. Parse this to a macro that checks for brace – if not, print level at given number, if so, extract first argument and label with second one.
 % \item pump beams for laser transitions
 % \item levels of a LED (solid state energy levels)
 % \item how about some axes with cool features?
 % \item Feshbach resonances
-% \item something for “cascades“, i.\,e. falling over several levels or many levels falling on the same – so to save keystrokes etc.
 % \item implement colors (e.\,g. Na, Li)
 % \item implement whole correct hyperfine schemes (data?!)
+% \item implement bound/unbound molecular schemes as used in chemistry
+% \item Whatever potential
 % \item …
 % \end{itemize}
 % \newpage
