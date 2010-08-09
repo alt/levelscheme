@@ -245,14 +245,40 @@ This package is able to draw several important potentials and to insert levels. 
 This macro draws a harmonic oszillator, i.\,e. a parabola with equidistant levels and an offset of half the level distance. The first argument gives the number of levels (default are four). The second argument is not used so far.
 
 \DescribeMacro{Lennard-Jones}
-Draws a Lennard-Jones potential. Levels can be included using some cool macro that is not yet really implemented.
-\DescribeMacro{Morse}
-Draws a Morse potential. Levels can be included using some cool macro that is not yet really implemented.
-\DescribeMacro{Whatever potential}
-This could be a nice improvement of the package: The user could offer the potential funection \emph{end} it’s inverted function, and this package draws the potential as well as levels at a given hight.
+Draws a Lennard-Jones potential. Levels can be included using some cool macro that is not yet really implemented. I think I will change this to a custom version of |whateverpotential|.
 
-\subsection{Coolness: Special features}
-These are just some pre-coded things that are often used. All of the following schemes can be drawn with the user level macros above, but as they might be used quite often, they are given here. If you don’t like the way they are implemented, just copy the code and use it the way you like. If you have a nice change in something, please let me know it, I’d love to offer alternative solutions for special needs.
+\DescribeMacro{Morse}
+Draws a Morse potential. Levels can be included using some cool macro that is not yet really implemented. Dito $\to$ |whateverpotential|
+\subsubsection{Your own potential}
+\DescribeMacro{Whatever potential}
+This is a nice toy to do whatever you want: The environment |whateverpotential|\footnote{Name may change if I find a better one.} draws a potential with a function given by the user. Then one can draw levels at given hights that have the correct position and distance.
+
+The following example shows your possibilities:\footnote{As far as implemented. We’ll see what the future brings. It’s up to you to suggest improvements …}
+\vspace{1.8cm}
+\begin{LTXexample}[pos=t]
+\begin{whateverpotential}(-5:5){-cos(50*\x)}{1/50*acos(\x)}{-1/50*acos(\x)}
+\potentiallevel{-0.3}
+\potentiallevel{0.3}[-2.15][2.15]
+\potentiallevel{-1}
+\end{whateverpotential}
+\end{LTXexample}
+
+The first two arguments in braces are mandatory arguments. The range, given in parenthesis, is optional, as well as the third argument in braces. You have to adjust it accordng to your function to avoid arithmetic overflow in \TeX. (Also, an exponential function might rapidly grow out of your sheet …)
+
+The first mandatory argument is the potential to be plotted. You might choose any function the pgf package understand. Note that the variable must be given as |\x|. Of course you can add constants as \TeX\ macros. (|\b| instead of 50).
+
+The second mandatory argument is the inverse of the aferementioned function. This is needed to calculate the right positions of the level to be inserted later. Again, this can be any function. You can mess up things totally here by giving a function that does not fit the main function. But you should not …
+
+The third argument in braces is optional. As the inverse of a function is not unique, thee must be a second inverse function. By default, we assume a symetric function, and therefore the second inverse is the negative of the first inverse. So this is redundant in the above example, but is necessary for asymmetric potentials.
+
+\DescribeMacro{\potentiallevel\{\}[][]}
+This is a special version of the |\level| macro fitting the needs of |whateverpotential|. %% No, it is not?
+If you have a quite simple potential, you can use it with one argument only, which is the vertical position of the level. This is then drawn from the left to the right according to the function you specified.
+
+If this goes wrong by any means, you can explicitly tell where to draw the line. This might happen in the above case when the level should be above 0 where the inverse function is not correct anymore. Then you can specify an arbitrary function that will be evaluated at the given value. I.\,e. |\potentiallevel{5}[sin(\x)][cos(\x)| will give you a level at hight 5 with right and left end at -0.96 and 0.28, respectively. That does not make much sense, but you also can just insert a number (which is a constant function) and the level will have the left end at this number and the right end at the negative number if you don’t give a second number in brackets. If so, that second number will be the right end.
+
+\subsection{Coolness}
+These are just some pre-coded things that are often used. All of the following schemes can be drawn with the user level macros above, but as they might be used quite often, they are given here. If you don’t like the way they are implemented, just copy the code and use it the way you like. If you have a nice change in something, please let me know it, I’d love to offer alternative solutions for special needs or change the default definitions.
 \DescribeMacro{lambdascheme}
 \DescribeMacro{EIT}
 
@@ -805,18 +831,18 @@ These are just some pre-coded things that are often used. All of the following s
 % \subsection{Whatever potential}
 % The user gives the function of a potential and it‘s inverted function. Then this environment draws the potential itself and a special level-macro draws levels at a given hight. Man, that’s awesome!
 %    \begin{macrocode}
-\NewDocumentEnvironment{whateverpotential}{D(){1:3}mmm}
+\NewDocumentEnvironment{whateverpotential}{D(){1:3}mmg}
 {
-  \gdef\lsinvertpotleft{#3}  
-  \gdef\lsinvertpotright{#4}  
+  \gdef\lsinvertpotleft{#3}
+  \IfNoValueTF{#4}
+    {\gdef\lsinvertpotright{-#3}}   %% wtf this works! :)
+    {\gdef\lsinvertpotright{#4}}
   \begin{tikzpicture}[domain=#1]
-    \draw plot[smooth] (\x,#2){};
-%%%    \draw plot[smooth] (\x,{\x}){};
+    \draw plot[smooth] (\x,{#2}){};
 }{
   \end{tikzpicture}
 }
-\NewDocumentCommand\potentiallevel{mO{\lsinvertpotleft}O{\lsinvertpotright}}{  %% hight, inverse function for left and for right point
-%% function given as f(\x), so \def\x{#1} ?
+\NewDocumentCommand\potentiallevel{mO{\lsinvertpotleft}O{\lsinvertpotright}}{ 
     \def\x{#1}
     \draw ({#2},#1) -- ({#3},#1){};
 }
@@ -839,6 +865,7 @@ These are just some pre-coded things that are often used. All of the following s
 % \begin{itemize}
 % \item improve spacing of photons (they are too narrow to the transition)
 % \item do labels using the label mechanism of tizk instead of stupidly do llap (but how – tikz example on p. 42 does not work!)
+% \item whateverlevel cannot have labels, cannot be used for transitions, cannot do nothing :-/
 % \item free positioning of levels (length, horizontal pos)
 % \item sublevels cannot have labels -> call as |\sublevels{(1 a),(2 b)}| etc. Parse this to a macro that checks for brace – if not, print level at given number, if so, extract first argument and label with second one.
 % \item pump beams for laser transitions
@@ -848,7 +875,6 @@ These are just some pre-coded things that are often used. All of the following s
 % \item implement colors (e.\,g. Na, Li)
 % \item implement whole correct hyperfine schemes (data?!)
 % \item implement bound/unbound molecular schemes as used in chemistry
-% \item Whatever potential
 % \item …
 % \end{itemize}
 % \newpage
