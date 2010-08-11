@@ -5,10 +5,10 @@
 %</internal>
 %<*readme>
 # levelscheme
-levelscheme is a LaTeX package that tries to offer an easy way of drawing atomic and molecular level schemes in a LaTeX document.
+levelscheme is a LaTeX package that offers an easy way of drawing atomic and molecular level schemes in a LaTeX document.
 
 ## installation
-The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. The package itself can be used with any up-to-date LaTeX-flavour.
+The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. (luaLaTeX should be fine, too.) The package itself can be used with any up-to-date LaTeX-flavour.
 
 ## requirements
 This package requires the expl3 packages, xparse and the TikZ bundle. Make shure all are installed and up to date.
@@ -99,19 +99,20 @@ This work conists of this file levelscheme.dtx
 
 %\OnlyDescription
 
-\def\filedate{2010/08/01}
-\def\fileversion{0.1a}
+\def\filedate{2010/08/10}
+\def\fileversion{0.1b}
 
 \title{The \textsf{levelscheme} package}
 \author{Arno L. Trautmann\thanks{arno.trautmann@gmx.de}}
 \date{Version \fileversion,\ \filedate}
+\let\bfseries\scshape   %%% ban bold print!
 
 \begin{document}
 \maketitle
 \begin{abstract}
 The package |levelscheme| tries to offer an easy way of drawing atomic or molecular level schemes. You can connect levels with different transitions, all by a very simple interface with many possibilities of changing the way everything looks.
  
-Any comments are welcome; please help me improve this package or its documentation. If you have suggestions regarding the user interface or want any special cool feature implemented, just mail me!
+Any comments are welcome; please help me improve this package or its documentation. If you have suggestions regarding the user interface or want any special cool feature implemented, just drop me a mail.
 \end{abstract}
 \tableofcontents
 \newpage
@@ -120,8 +121,8 @@ Any comments are welcome; please help me improve this package or its documentati
 This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
 
 \section{Usage}
-You draw \hyperref[sec:levels]{levels} using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful \hyperref[sec:transitions]{transitions}:
-\begin{LTXexample}[caption=A simple example.,preset={\vspace*{-10ex}\shifttrans{-.5}}]
+The basic usage is the following: You draw \hyperref[sec:levels]{levels} using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful \hyperref[sec:transitions]{transitions}:
+\begin{LTXexample}[caption={A simple yet colorfull example.},preset={\vspace*{-10ex}\shifttrans{-.5}}]
 \begin{levelscheme}
 \level[1]{A}
 \virtuallevel[3]{B}
@@ -134,18 +135,28 @@ You draw \hyperref[sec:levels]{levels} using the command |\level[1]{mylevel}|, g
 \end{levelscheme}
 \end{LTXexample}
 
-You have many options to change everything to your needs: arrow directions, photon length and direction, positions, distances, colors, thickness etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
+You have many options to change everything according to your needs: arrow directions, photon length and direction; positions, distances, colors, thickness etc. by using few and quite intuitive commands. All command names are inspired by what they describe, so there is no „line with arrows at both sides“ but rather |\cycle| for „cycling transition“.
 
 There are three classes of commands: Such that represent \hyperref[sec:levels]{levels}, commands for \hyperref[sec:transitions]{transitions} and  commands or environments for \hyperref[sec:potentials]{potentials}, respectively.
 
 \subsection{Levels}
 \label{sec:levels}
-To allow transitions between levels, every level must have a unique name. This name is given as the mandatory argument of the |\level| command.
+To allow transitions between levels, there have to be levels with unique names. These names are given as the mandatory argument of the |\level| command.
 
-All level commands take \emph{two} optional arguments: the first optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course. The second optional argument takes options for that level and can be given as key-value or keys only. (see section \ref{sec:leveloptions}
+All level commands take \emph{two} optional arguments: the first optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course. The second optional argument takes options for that level and can be given as key-value pair or keys only. (see section \ref{sec:leveloptions}
 
 \DescribeMacro{\level[][]\{\}}
-Draws a line that represents an energy level. Takes two arguments, the second being the unique name of the level. The first argument is optional and contains a label to be printed next to the level.
+Draws a line that represents an energy level. The third argument is a name for the level by which it can be referred to within transitions. The first, optional, argument is the label which will be printed next to the line. The second, optional, argument takes a key or key-value list to change the way the levle looks.
+
+\begin{LTXexample}[preset={\shifttrans{-2}}]
+\begin{levelscheme}
+\level[1]{excited}
+\minorlevel[1.a]{excited-a}
+\virtuallevel[2]{detuned}
+\nolevel[3]{ground}
+\emit{excited}{ground}
+\end{levelscheme}
+\end{LTXexample}
 
 \DescribeMacro{\minorlevel[][]\{\}}
 Same as normal |\level|, but with a thin stroke. This way you can have a better overview of your levels and emphasize important levels. Use with care as too many different stroke types will confuse the reader!
@@ -154,21 +165,31 @@ Same as normal |\level|, but with a thin stroke. This way you can have a better 
 A level that does not exist in some way, but does in another … however, it is dashed. Useful e.\,g. for Raman transitions.
 
 \DescribeMacro{\nolevel[][]\{\}}
-Such a level does not exist at all. Nevertheless you can draw transitions to it. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
+The name is quite misleading: A |\nolevel| does not exist at all. Nevertheless you can draw transitions to it. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
 
 \DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
 This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |A|) and vertically shifted with respect to that one by the given numbers.
 
-\begin{LTXexample}[title={A totally messed up and buggy code … this will hopefully be corrected!},preset={\sublevelwidth{1}\levelwidth{0.5}}]
-\begin{levelscheme}
-\level{A}
-\sublevels{A}{-1,0,1,1.5}
-\end{levelscheme}
-\end{LTXexample}
+%\begin{LTXexample}[title={A totally messed up and buggy code … this will hopefully be corrected!},preset={\sublevelwidth{1}\levelwidth{0.5}}]
+%\begin{levelscheme}
+%\level{A}
+%\sublevels{A}{-1,0,1,1.5}
+%\end{levelscheme}
+%\end{LTXexample}
 
 \subsection{Transitions}
 \label{sec:transitions}
 There are many kinds of possible transitions. For most of them there are special commands. All of them can be adjusted by means of options given in brackets. |\cyle[no]| denotes a forbidden cycling transition. For possible options see section \ref{sec:transoptions} below.
+
+\begin{LTXexample}[title={A collection of all possible transitions. The |shifttrans| command is for finetuning the position of the transition arrows and normally shoudn’t be needed.}%
+,preset={\levelwidth{5}\shifttrans{-2}},pos=t]
+\begin{levelscheme}
+\level{A}
+\level{B}
+\absorb BA \shifttrans{-.5}\emit AB\shifttrans{.7} \cycle AB \shifttrans{.7} \indemit AB \shifttrans{2} \decay AB \shifttrans{1} \relaxation AB
+\end{levelscheme}
+\end{LTXexample}
+
 
 All transition commands take three arguments: The first one is an optional argument taking key or key-value pairs. The second and third argument denote the starting and ending level, respectively.
 
@@ -185,39 +206,6 @@ Connects two states via an bidirectional arrow, with a photon. The photon is com
 
 \DescribeMacro{\nophotoncycle[]\{\}\{\}}
 Dito, without a photon.
-
-\DescribeMacro{\transition*[]\{\}\{\}}
-This is our working horse. The |\transition| macro does all the work and is thus quite powerful. It is \emph{not} intended for the normal user as it’s syntax is quite complex. Use on of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon.
-
-\section{Options}
-\subsection{Options for Levels}
-\label{sec:leveloptions}
-\begin{description}
-\item[color=] color of the level.
-\item[thickness=] thickness of the level. Can take the following values which can also be given alone as shorthand:
-\item[thick] draws a thick level
-\item[very thick] draws a very thick levl
-\item[thin] draws a thin level (default for minorlevel)
-\item[very thin] draws a very thin level (be careful, this might not be rendered correctly on your screen and may look totally different when printed!)
-\item[…] …
-\end{description}
-
-\subsection{Options for Transitions}
-\label{sec:transoptions}
-Options are given to the commands in square brackets |[]|. This is mostly done by a key-value or key only interface. Some options can be set using special macros (e.\,g. for global options that affect all following transitions or levels etc.)
-
-\begin{description}
-\item[no] A forbidden transition. This will cross out the transition arrow.
-\item[not allowed] same as [no].
-\item[yes] the opposite of [no]. (this way you can force the existence of a photon)
-\item[color=] color of the transition-arrow. The photon stays (yet) black.
-\item[near end] causes the photon to appear nearer to the end of the transition than to the middle. This is useful to adjust the position of the photon.
-\item[near start] dito, but for the beginning of the transition
-\item[dir=] denotes the position of the photon relative to the transition arrow; possible values are |left| and |right|.
-\item[left] shorthand for |dir=left|
-\item[right] shorthand for |dir=right|
-\end{description}
-
 
 \DescribeMacro{\cascadeto*[]\{\}\{\}}
 The cascade macro is very useful if you want to draw decays (or absorbtions …) for several levels. You can just put a number of levels into the third (mandatory) argument, and all of these levels will decay  into (or absorb from or to, whatever) the level given in the last argument. The type of transition can be given in the optional argument, where |\relaxation| is default. The starred version does not shift the transitions horizontally, while the non-starred version does. The starred version is quite nonsense and may vanish the next days …
@@ -236,6 +224,11 @@ Similar to the above macro, but now every given level decays into the next one. 
 
 \DescribeMacro{\cascadeallto*[]\{\}}
 A quite useless combination of the two above macros. Will lead to unusefull arrows all over your levels.
+
+\DescribeMacro{\transition*[]\{\}\{\}}
+This is our working horse. While all of the above macros are user level macros, this one is more for internal use. But the experinced user with special needs may have fun with this, therefore here is a short description. Please see implementation for details.
+
+The |\transition| macro does all the work and is thus quite powerful. It is not intended for the normal user as it’s syntax is quite complex. Use one of the abbreviations above, they all rely on |\transition|. The star notes a photonless transition, while no star is for a transition with photon. The |\transition| macro takes many options additionally to the options available for every other special macro.  Actually, all the above macros are just shorthand notations for a |\transition| with special keys.
 
 \subsection{Potentials}
 \label{sec:potentials}
@@ -265,17 +258,46 @@ The following example shows your possibilities:\footnote{As far as implemented. 
 
 The first two arguments in braces are mandatory arguments. The range, given in parenthesis, is optional, as well as the third argument in braces. You have to adjust it accordng to your function to avoid arithmetic overflow in \TeX. (Also, an exponential function might rapidly grow out of your sheet …)
 
-The first mandatory argument is the potential to be plotted. You might choose any function the pgf package understand. Note that the variable must be given as |\x|. Of course you can add constants as \TeX\ macros. (|\b| instead of 50).
+The first mandatory argument is the potential to be plotted. You might choose any function the pgf package understand. Note that the variable must be given as |\x|. Of course you can add constants as \TeX\ macros. (|\b| instead of 50 or so).
 
 The second mandatory argument is the inverse of the aferementioned function. This is needed to calculate the right positions of the level to be inserted later. Again, this can be any function. You can mess up things totally here by giving a function that does not fit the main function. But you should not …
 
-The third argument in braces is optional. As the inverse of a function is not unique, thee must be a second inverse function. By default, we assume a symetric function, and therefore the second inverse is the negative of the first inverse. So this is redundant in the above example, but is necessary for asymmetric potentials.
+The third argument in braces is optional. As the inverse of a function often is not unique, there must be a second inverse function. By default, we assume a symetric function, and therefore the second inverse is the negative of the first inverse. So this is redundant in the above example, but is necessary for asymmetric potentials.
 
 \DescribeMacro{\potentiallevel\{\}[][]}
-This is a special version of the |\level| macro fitting the needs of |whateverpotential|. %% No, it is not?
+This is a special version of the |\level| macro fitting the needs of |whateverpotential|. %% No, it is not?!
 If you have a quite simple potential, you can use it with one argument only, which is the vertical position of the level. This is then drawn from the left to the right according to the function you specified.
 
 If this goes wrong by any means, you can explicitly tell where to draw the line. This might happen in the above case when the level should be above 0 where the inverse function is not correct anymore. Then you can specify an arbitrary function that will be evaluated at the given value. I.\,e. |\potentiallevel{5}[sin(\x)][cos(\x)| will give you a level at hight 5 with right and left end at -0.96 and 0.28, respectively. That does not make much sense, but you also can just insert a number (which is a constant function) and the level will have the left end at this number and the right end at the negative number if you don’t give a second number in brackets. If so, that second number will be the right end.
+
+\section{Options}
+\subsection{Options for Levels}
+\label{sec:leveloptions}
+\begin{description}
+\item[color=] color of the level.
+\item[thickness=] thickness of the level. Can take the following values which can also be given alone as shorthand:
+\item[thick] draws a thick level
+\item[very thick] draws a very thick levl
+\item[thin] draws a thin level (default for minorlevel)
+\item[very thin] draws a very thin level (be careful, this might not be rendered correctly on your screen and may look totally different when printed!)
+\item[…] …
+\end{description}
+
+\subsection{Options for Transitions}
+\label{sec:transoptions}
+Options are given to the commands in square brackets |[]|. This is mostly done by a key-value or key only interface. Some options can be set using special macros (e.\,g. for global options that affect all following transitions or levels etc.)
+
+\begin{description}
+\item[no] A forbidden transition. This will cross out the transition arrow.
+\item[not allowed] same as [no] for the typophile.
+\item[yes] That’s the opposite of [no]! (this way you can force the existence of a photon)
+\item[color=] color of the transition-arrow. The photon stays (yet) black which is admittedly untypical for a photon.
+\item[near end] causes the photon to appear nearer to the end of the transition than to the middle. This is useful to adjust the position of the photon to avoid ugly conflicts of levels with photons.
+\item[near start] dito, but for the beginning of the transition.
+\item[dir=] denotes the position of the photon relative to the transition arrow; possible values are |left| and |right|.
+\item[left] shorthand for |dir=left|.
+\item[right] shorthand for |dir=right|.
+\end{description}
 
 \subsection{Coolness}
 These are just some pre-coded things that are often used. All of the following schemes can be drawn with the user level macros above, but as they might be used quite often, they are given here. If you don’t like the way they are implemented, just copy the code and use it the way you like. If you have a nice change in something, please let me know it, I’d love to offer alternative solutions for special needs or change the default definitions.
@@ -496,28 +518,24 @@ These are just some pre-coded things that are often used. All of the following s
 % A number of sublevels of given distances
 %    \begin{macrocode}
 %% first, a helper macro (there should be much more of these here around!)
-\DeclareDocumentCommand\extractlabels{}{
-  
-}
-\cs_new:Nn\ls_onesublevel:n{
-  \node(mytest){\argi, \argii, \argiii, außerdem #1};
-}
-%% then the main macro
 \DeclareDocumentCommand\sublevels{O{lastlevel-3}mm}
 {
+  \gdef\nrone{#1}
   \node (sublevelstart) [right=of #1.center]{};
-\def\argii{#2}
-\def\argi{#1}
-\def\argiii{#3}
-  \clist_map_function:nN{#3}{\ls_onesublevel:n}
-%  \foreach \x in {#3}{%
-%%%\cs_new:Nn\ls_onesublevel:nnn{
-%%%    \node (#2-tmp) [%
-%%%      node distance= \x*\ls_subleveldistance,%
-%%%      above=of sublevelstart.south%
-%%%      ]{};
-%%%    \draw (#1.center) -- (#2-tmp.center) -- +(\ls_sublevelwidth,0) node (end-#2-tmp) {\hbox to 2em{\hfill}};
-%%%  }
+  \clist_map_function:nN{#3}{\splitsublevels}
+}
+
+\DeclareDocumentCommand\splitsublevels
+{>{\SplitArgument{1}{<}}m}
+{\processsublevels#1}
+
+\DeclareDocumentCommand\processsublevels{mm}
+{
+    \node (sub#1) [%
+      node distance= #1*\ls_subleveldistance,%
+      above=of sublevelstart.south%
+      ]{};
+    \draw (\nrone.center) -- (sub#1.center) -- +(\ls_sublevelwidth,0) node (end-sub#1) {\IfNoValueF{#2}{\rlap{\ #2}}};
 }
 %    \end{macrocode}
 % An attempt to implement the possibility to use several columns of levels, e.\,g. for para- and ortho-Helium. Not yet useable.
@@ -649,6 +667,12 @@ These are just some pre-coded things that are often used. All of the following s
 %    \begin{macrocode}
 \NewDocumentCommand\relaxation{O{midway,dir=right}mm}{
   \transition*[#1][ls-decoration]{#2}{#3}{<-}
+}
+%    \end{macrocode}
+% A decay is an emission, actually, but the emphasis is on the transition, not what is emitted. So it is a snaked line with a photon. This differs from a relaxation process in which there is no photon emitted, but the energy is dissipated in another way.
+%    \begin{macrocode}
+\NewDocumentCommand\decay{O{midway,dir=right}mm}{
+  \transition[#1][ls-decoration]{#2}{#3}{<-}
 }
 %    \end{macrocode}
 % If decay into several levels is possible, you don’t have to do alle stuff by hand, but rather use this one:
@@ -842,9 +866,11 @@ These are just some pre-coded things that are often used. All of the following s
 }{
   \end{tikzpicture}
 }
-\NewDocumentCommand\potentiallevel{mO{\lsinvertpotleft}O{\lsinvertpotright}}{ 
-    \def\x{#1}
-    \draw ({#2},#1) -- ({#3},#1){};
+\NewDocumentCommand\potentiallevel{O{pot}mO{\lsinvertpotleft}O{\lsinvertpotright}}{ 
+    \def\x{#2}
+    \node (#1left) at ({#3},#2){};
+    \node (#1right) at ({#4},#2){};
+    \draw (#1left.center) -- (#1right.center){};
 }
 %    \end{macrocode}
 % \clearpage
@@ -853,9 +879,7 @@ These are just some pre-coded things that are often used. All of the following s
 % \section{Known Bugs}
 % This should be a list of (serious) bugs. Please report any of them to me!
 % \begin{itemize}
-% \item |sublevels| is totally f***ed up!
 % \item wtf is wrong with the index?!
-% \item HeNe is not ready …
 % \item MOT beams should be aligned and all at same hight
 % \item photons in induced emission should be vertically centered (symmetrically)
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
@@ -865,9 +889,9 @@ These are just some pre-coded things that are often used. All of the following s
 % \begin{itemize}
 % \item improve spacing of photons (they are too narrow to the transition)
 % \item do labels using the label mechanism of tizk instead of stupidly do llap (but how – tikz example on p. 42 does not work!)
-% \item whateverlevel cannot have labels, cannot be used for transitions, cannot do nothing :-/
+% \item whateverlevel needs improvement to be a good replacement for level. Actually, level should be flexible enough to be used here. I.\,e. level must take start and endpoint. (see arbitrary positioning …)
 % \item free positioning of levels (length, horizontal pos)
-% \item sublevels cannot have labels -> call as |\sublevels{(1 a),(2 b)}| etc. Parse this to a macro that checks for brace – if not, print level at given number, if so, extract first argument and label with second one.
+% \item HeNe is not ready …
 % \item pump beams for laser transitions
 % \item levels of a LED (solid state energy levels)
 % \item how about some axes with cool features?
@@ -878,6 +902,9 @@ These are just some pre-coded things that are often used. All of the following s
 % \item …
 % \end{itemize}
 % \newpage
+% An example for a totally messed up index. It’s not my fault …
+% 
+% I guess.
 % \PrintIndex
 % \iffalse
 %</levelscheme>
