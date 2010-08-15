@@ -8,12 +8,14 @@
 levelscheme is a LaTeX package that offers an easy way of drawing atomic and molecular level schemes in a LaTeX document.
 
 ## installation
-The dtx file has to be compiled with XeLaTeX in order to get the pdf documentation. (luaLaTeX should be fine, too.) The package itself can be used with any up-to-date LaTeX-flavour.
+Compile the dtx file with XeLaTeX to get the documentation (pdf) as well as the package code (.sty).
+The dtx file has to be compiled with XeLaTeX (luaLaTeX should be fine, too, but not pdf- or dviLaTeX.) The package itself can be used with any up-to-date LaTeX-flavour.
 
 ## requirements
 This package requires the expl3 packages, xparse and the TikZ bundle. Make shure all are installed and up to date.
 
-Any comments and suggestions are welcome! Help me improve this package!
+Any comments and suggestions are welcome! I’m trying to make this package as user-friendly as possible, therefore I need your feedback. 
+Help me improve this package!
 
 Contact me: arno dot trautmann at gmx dot de.
 %</readme>
@@ -25,6 +27,8 @@ Contact me: arno dot trautmann at gmx dot de.
 \input docstrip.tex
 \keepsilent
 \preamble
+
+_________________________________________
 EXPERIMENTAL CODE
 
 Do not distribute this file without also distributing the
@@ -112,14 +116,13 @@ This work conists of this file levelscheme.dtx
 \begin{abstract}
 The package |levelscheme| tries to offer an easy way of drawing atomic or molecular level schemes. You can connect levels with different transitions, all by a very simple interface with many possibilities of changing the way everything looks.
  
-Any comments are welcome; please help me improve this package or its documentation. If you have suggestions regarding the user interface or want any special cool feature implemented, just drop me a mail.
+Any comments are welcome; please help me improve this package and its documentation. If you have suggestions regarding the user interface or want any special cool feature implemented, just drop me a mail.
 \end{abstract}
 \tableofcontents
 \newpage
-\part{Documentation}
 \section{Introduction}
 This package aims to provide an easy and fast way to draw atomic level schemes. It is designed for theses in the atomic, molecular or quantum optical sciences to help quickly sketch the idea of a certain (experimental) situation. |levelscheme| is \emph{not} intended to offer rigorous calculations and exact potential forms etc. It is just an alternative to drawing things in Paint.
-
+\part{Documentation}
 \section{Usage}
 The basic usage is the following: You draw \hyperref[sec:levels]{levels} using the command |\level[1]{mylevel}|, give them names and labels and connect them via physical meaningful \hyperref[sec:transitions]{transitions}:
 \begin{LTXexample}[caption={A simple yet colorfull example.},preset={\vspace*{-10ex}\shifttrans{-.5}}]
@@ -145,6 +148,7 @@ To allow transitions between levels, there have to be levels with unique names. 
 
 All level commands take \emph{two} optional arguments: the first optional argument in brackets is a label that will be printed next to the level bar. You can give arbitrary names and labels, of course. The second optional argument takes options for that level and can be given as key-value pair or keys only. (see section \ref{sec:leveloptions}
 
+\subsubsection{A normal level}
 \DescribeMacro{\level[][]\{\}}
 Draws a line that represents an energy level. The third argument is a name for the level by which it can be referred to within transitions. The first, optional, argument is the label which will be printed next to the line. The second, optional, argument takes a key or key-value list to change the way the levle looks.
 
@@ -158,6 +162,7 @@ Draws a line that represents an energy level. The third argument is a name for t
 \end{levelscheme}
 \end{LTXexample}
 
+\subsubsection{Special Levels}
 \DescribeMacro{\minorlevel[][]\{\}}
 Same as normal |\level|, but with a thin stroke. This way you can have a better overview of your levels and emphasize important levels. Use with care as too many different stroke types will confuse the reader!
 
@@ -167,15 +172,25 @@ A level that does not exist in some way, but does in another … however, it is 
 \DescribeMacro{\nolevel[][]\{\}}
 The name is quite misleading: A |\nolevel| does not exist at all. Nevertheless you can draw transitions to it. This is useful if you want to depict detuning of the laser. If you shine in red-detuned light, draw the upper level, then a |\nolevel|, then the lower level, and use an absorption from lower to |\nolevel|. This way the transition does not go up all the way to the upper level and it is clear that this photon cannot be absorbed.
 
-\DescribeMacro{\sublevels\{level\}\{-1,-5,3,4\}}
-This command draws a bunch of sublevels. These will be right of the given ”main level“ (here |A|) and vertically shifted with respect to that one by the given numbers.
+\subsubsection{Sublevels, Finestructure etc.}
+\DescribeMacro{\sublevels\{A\}\{-1,-5,3,4\}}
+This command draws a bunch of sublevels. These will be right-hand to the given ”main level“ (here |A|) and vertically shifted with respect to that one by the given numbers. (comma-separated list)
 
-%\begin{LTXexample}[title={A totally messed up and buggy code … this will hopefully be corrected!},preset={\sublevelwidth{1}\levelwidth{0.5}}]
-%\begin{levelscheme}
-%\level{A}
-%\sublevels{A}{-1,0,1,1.5}
-%\end{levelscheme}
-%\end{LTXexample}
+You can label the sublevels by extending the comma-separeted list: |\sublevels\{A\}\{-1,-5<ground,3,4<excited\}| This will print a label “ground” to the |-5| state and ”excited“ to the |4| state.
+
+If you want to draw transitions between sublevels (or from a sublevel to anywhere else), you can reach each sublevel by attaching the number it has in the list and it’s main level: |\cycle{A-2}{A-3}| will cycle from the level at |-1| to the level at |3|. That’s not very user friendly, so you can again extend your comma separated list by another |<| with an intern label that you can use for transitions. Therefore:\\
+|\sublevels\{A\}\{-1,-5<ground<gr,3,4<excited<up\}|\\
+|\cycle{gr}{up}|\\
+will correctly cycle.
+
+\begin{LTXexample}[title={An example for sublevels with printed labels and internal labels.}
+,preset={\sublevelwidth{1}\levelwidth{0.5}}]
+\begin{levelscheme}
+\level[main level]{A}
+\sublevels{A}{-1<ground state<ground,0,1,2<uppermost state<up}
+\absorb{ground}{up}
+\end{levelscheme}
+\end{LTXexample}
 
 \subsection{Transitions}
 \label{sec:transitions}
@@ -271,9 +286,15 @@ If you have a quite simple potential, you can use it with one argument only, whi
 If this goes wrong by any means, you can explicitly tell where to draw the line. This might happen in the above case when the level should be above 0 where the inverse function is not correct anymore. Then you can specify an arbitrary function that will be evaluated at the given value. I.\,e. |\potentiallevel{5}[sin(\x)][cos(\x)| will give you a level at hight 5 with right and left end at -0.96 and 0.28, respectively. That does not make much sense, but you also can just insert a number (which is a constant function) and the level will have the left end at this number and the right end at the negative number if you don’t give a second number in brackets. If so, that second number will be the right end.
 
 \section{Options}
+You can set all options via the command |\lsset{}| or via package options when loading |levelscheme|.
 \subsection{Options for Levels}
 \label{sec:leveloptions}
+
+%% scshape items look stupid! 
 \begin{description}
+\def\bfseries{\color{blue}}
+\item[asfigure] All levelscheme environments are then set as figures. This way you can use |\caption| directly inside the levelscheme environment and don’t have to embed the latter one in a figure environment. Position specifiers |[h,b,t,H]| are not possible so far. Sorry!
+
 \item[color=] color of the level.
 \item[thickness=] thickness of the level. Can take the following values which can also be given alone as shorthand:
 \item[thick] draws a thick level
@@ -288,6 +309,7 @@ If this goes wrong by any means, you can explicitly tell where to draw the line.
 Options are given to the commands in square brackets |[]|. This is mostly done by a key-value or key only interface. Some options can be set using special macros (e.\,g. for global options that affect all following transitions or levels etc.)
 
 \begin{description}
+\def\bfseries{\color{blue}}
 \item[no] A forbidden transition. This will cross out the transition arrow.
 \item[not allowed] same as [no] for the typophile.
 \item[yes] That’s the opposite of [no]! (this way you can force the existence of a photon)
@@ -299,10 +321,19 @@ Options are given to the commands in square brackets |[]|. This is mostly done b
 \item[right] shorthand for |dir=right|.
 \end{description}
 
-\subsection{Coolness}
+\section{Coolness}
 These are just some pre-coded things that are often used. All of the following schemes can be drawn with the user level macros above, but as they might be used quite often, they are given here. If you don’t like the way they are implemented, just copy the code and use it the way you like. If you have a nice change in something, please let me know it, I’d love to offer alternative solutions for special needs or change the default definitions.
-\DescribeMacro{lambdascheme}
-\DescribeMacro{EIT}
+\DescribeMacro{lambdascheme} This is implemented and works quite good. See implementation for  details. (Documentation follows.)
+
+\DescribeMacro{EIT} This is implemented and works quite good. See implementation for  details. (Documentation follows.)
+\DescribeMacro{LED} Not yet implemented and no idea how. Suggestions are welcome!
+
+\DescribeMacro{Transistor} Not yet implemented and no idea how. Suggestions are welcome!
+
+\DescribeMacro{Diode} Not yet implemented and no idea how. Suggestions are welcome!
+
+\DescribeMacro{Chemical Levels} This should be like the levelschemes drawn in book on chemistry. No idea what to do here.
+
 
 \StopEventually{}
 \clearpage
@@ -321,9 +352,10 @@ These are just some pre-coded things that are often used. All of the following s
 % Last, special tikz-libraries for arrows etc.
 %    \begin{macrocode} 
 \ProvidesPackage{levelscheme}
-  [2010/06/27 v 0.a1 atomic/molecular level schemes]
+  [2010/08/15 v 0.1b atomic/molecular level schemes]
 \RequirePackage{
   forloop,
+  l3keys2e,
   tikz,
   xparse
 }
@@ -338,8 +370,18 @@ These are just some pre-coded things that are often used. All of the following s
 \ExplSyntaxOn
 %    \end{macrocode}
 % \section{Keys}
+% First, some boolean variables to be set with keys:
+%    \begin{macrocode}
+\bool_new:N\ls_trans_allowed
+\bool_new:N\ls_first_of_cascade
+\bool_new:N\ls_asfigure
+%    \end{macrocode}
 % keys:
 %    \begin{macrocode}
+\keys_define:nn{ls}{%% for miscelaneous settings
+  asfigure.code:n = \bool_set_true:N\ls_asfigure,
+  devil.code:n = \AtBeginDocument{This~document~is~the~devil’s.\stop}
+}
 \keys_define:nn{ls_trans}{
   dir.code:n = \tl_set:Nn\ls_trans_dir{#1},
   right.meta:n = {dir=right},
@@ -405,12 +447,20 @@ These are just some pre-coded things that are often used. All of the following s
     {\ls_setkeys:n{#2}}
     {\keys_set:nn{ls_#1}{#2}}
 }
+
+\ProcessKeysPackageOptions{ls}
+
 %    \end{macrocode}
 %\section{Constants and Variables}
-% setting up constants/varibles with default values.
+% setting up constants/varibles with default values. First numbers, then token lists
 %    \begin{macrocode}
-\bool_new:N\ls_trans_allowed
-\bool_new:N\ls_first_of_cascade
+\int_new:c{cursub}
+\int_set:cn{cursub}{0}
+
+\fp_new:c{transdist}
+\fp_gset:cn{transdist}{1}
+\fp_new:c{ls_trans_shift}
+\fp_gset:cn{ls_trans_shift}{1}
 
 \tl_gset:Nn\c_ls_right{right}
 
@@ -430,56 +480,62 @@ These are just some pre-coded things that are often used. All of the following s
 \tl_set:Nn\ls_level_color{black}
 \tl_set:Nn\ls_trans_color{black}
 
-\fp_new:c{transdist}  %% must be changed to some floating number!
-\fp_gset:cn{transdist}{1}
-\fp_new:c{ls_trans_shift}  %% must be changed to some floating number!
-\fp_gset:cn{ls_trans_shift}{1}
+\tl_new:N\ls_captiontext
 
 \tikzset{ls-decoration/.style={decorate,decoration={snake}}}
-
+%    \end{macrocode}
+% These macros need special treatment as they are Document Commands but must be expandable. This is not very nice and may change internally to a clean implementation
+%    \begin{macrocode}
 \DeclareExpandableDocumentCommand\photonlength{}{1.2}
 \DeclareExpandableDocumentCommand\finestructlength{}{2}
 
-\newcounter{finestruct}  %% needed bye the for-loop of sublevels  (?) anywhere, as that package does not get clear with expl3-counts
-\newcounter{HOlevel}   %% needed by the for-loop in the harmonic oszillator
-
+\newcounter{HOlevel}   %% needed by the for-loop in the harmonic oszillator, no expl3-counter possible (might change. should change!)
 %    \end{macrocode}
-% User level macros to set them
+% User level macros to set variables
 %    \begin{macrocode}
 \DeclareDocumentCommand\leveldistance{m}{
-  \tl_gset:Nn\ls_leveldistance{#1}
-}
+  \tl_gset:Nn\ls_leveldistance{#1}}
 \DeclareDocumentCommand\levelwidth{m}{
-  \tl_gset:Nn\ls_levelwidth{#1}
-}
-\DeclareDocumentCommand\sublevelwidth{m}{
-  \tl_gset:Nn\ls_sublevelwidth{#1}
-}
+  \tl_gset:Nn\ls_levelwidth{#1}}
 \DeclareDocumentCommand\subleveldistance{m}{
-  \tl_gset:Nn\ls_subleveldistance{#1}
-}
+  \tl_gset:Nn\ls_subleveldistance{#1}}
+\DeclareDocumentCommand\sublevelwidth{m}{
+  \tl_gset:Nn\ls_sublevelwidth{#1}}
 \DeclareDocumentCommand\levelcolor{m}{
-  \tl_gset:Nn\ls_level_color{#1}
-}
+  \tl_gset:Nn\ls_level_color{#1}}
 \DeclareDocumentCommand\levelthickness{m}{
-  \tl_gset:Nn\ls_level_thick{#1}
-}
+  \tl_gset:Nn\ls_level_thick{#1}}
 \DeclareDocumentCommand\transitionthickness{m}{
-  \tl_gset:Nn\ls_trans_thick{#1}
-}
+  \tl_gset:Nn\ls_trans_thick{#1}}
 \ExplSyntaxOff
 %    \end{macrocode}
 % \section{Level Scheme}
-% This is the main environment of this package, and almost everything elese is based on this. Mostly, it is just a wrapper for a |tikzpicture| with some settings.
+% This is the main environment of this package, and almost everything elese is based on this. Mostly, it is just a wrapper for a |tikzpicture| with some settings. We change from ExplSyntax to ExplSyntaxNames to avoid spacing problems – TikZ needs explicit spaces and i don’t want a tilde slaughter.
 %    \begin{macrocode}
 \ExplSyntaxNamesOn
 \DeclareDocumentEnvironment{levelscheme}{O{}}
 {
-  \begin{tikzpicture}[#1,inner sep=0mm,>=stealth]%
+\fp_set:Nn\ls_transshift{0}  %% reset the shift from other schemes
+  \bool_if:NT\ls_asfigure{
+    \begin{figure}
+    \cs_gset_eq:NN\ls_caption\caption
+    \DeclareDocumentCommand\caption{m}{
+      \tl_gset:Nn\ls_captiontext{##1}
+    }
+  }
+  \tl_set:Nn\ls_tikz_opt{#1}
+  \begin{tikzpicture}[\ls_tikz_opt,inner sep=0mm,>=stealth]%
     \node (lastlevel) at (0,0){};%
 }
 {
   \end{tikzpicture}
+  \bool_if:NT\ls_asfigure{
+    \tl_if_empty:NF\ls_captiontext{
+      \ls_caption{\tl_use:N\ls_captiontext}
+    }
+    \end{figure}
+  }
+%}
 }
 %    \end{macrocode}
 % One of the two most important macros: |\level|. Guess what it does ;)
@@ -515,27 +571,31 @@ These are just some pre-coded things that are often used. All of the following s
   \tl_set:Nn\ls_level_style{}
 }
 %    \end{macrocode}
-% A number of sublevels of given distances
+% A number of sublevels of given distances. Implementation is as follows: The |\sublevels| collects the main level (first arg) and a list of sublevels at arbitrary hight. A node is defined to be the anchor point for the sublevels. The list is parted by a mapping function and parsed to a splitter function. This splits each entry in the list into three arguments, the first one being the position of the level and mandatory. Second one is a printable label, optional, The third one is an internal label, optional. Have to check for |-NoValue-| here as parsing as optional argument does not work. Quite a heap of work for these sublevels …
 %    \begin{macrocode}
-%% first, a helper macro (there should be much more of these here around!)
-\DeclareDocumentCommand\sublevels{O{lastlevel-3}mm}
+\DeclareDocumentCommand\sublevels{mm}
 {
-  \gdef\nrone{#1}
-  \node (sublevelstart) [right=of #1.center]{};
-  \clist_map_function:nN{#3}{\splitsublevels}
+  \tl_set:Nn\ls_mainlevel{#1}
+  \int_set:cn{cursub}{0}
+  \node (sublevelstart) [right=of #1-3.center]{};
+  \clist_map_function:nN{#2}{\splitsublevels}
 }
-
+%
 \DeclareDocumentCommand\splitsublevels
-{>{\SplitArgument{1}{<}}m}
+{>{\SplitArgument{2}{<}}m}
 {\processsublevels#1}
-
-\DeclareDocumentCommand\processsublevels{mm}
+%
+\DeclareDocumentCommand\processsublevels{mmm}
 {
-    \node (sub#1) [%
-      node distance= #1*\ls_subleveldistance,%
-      above=of sublevelstart.south%
+  \int_incr:c{cursub}
+  \IfNoValueTF{#3}%
+  {\tl_set:Nn\ls_subname{\ls_mainlevel-sub-\int_use:c{cursub}}}
+  {\tl_set:Nn\ls_subname{#3}}
+    \node (\ls_subname) [
+      node distance= #1*\ls_subleveldistance,
+      above=of sublevelstart.south
       ]{};
-    \draw (\nrone.center) -- (sub#1.center) -- +(\ls_sublevelwidth,0) node (end-sub#1) {\IfNoValueF{#2}{\rlap{\ #2}}};
+    \draw (\ls_mainlevel-3.center) -- (\ls_subname.center) -- +(\ls_sublevelwidth,0) node (\ls_subname-3) {\IfNoValueF{#2}{\rlap{\ #2}}};
 }
 %    \end{macrocode}
 % An attempt to implement the possibility to use several columns of levels, e.\,g. for para- and ortho-Helium. Not yet useable.
@@ -564,13 +624,13 @@ These are just some pre-coded things that are often used. All of the following s
 \NewDocumentCommand\finestruct{mmm}{
   \fp_set:cn{transdist}{0}
   \node (finestart) [right=of lastlevel-3]{};
-  \forLoop{1}{#1}{finestruct}{
-    \node (#3-\thefinestruct) [%
-      node distance= #2*(-#1/2+(\thefinestruct-.5)),%
-      above=of finestart.south%
-      ]{};
-  \draw (lastlevel-3.center) to (#3-\thefinestruct.center) -- +(2,0) node (end-#3-\thefinestruct) {};
-  }
+%  \forLoop{1}{#1}{finestruct}{
+%    \node (#3-\thefinestruct) [%
+%      node distance= #2*(-#1/2+(\thefinestruct-.5)),%
+%      above=of finestart.south%
+%      ]{};
+%  \draw (lastlevel-3.center) to (#3-\thefinestruct.center) -- +(2,0) node (end-#3-\thefinestruct) {};
+%  }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -689,7 +749,7 @@ These are just some pre-coded things that are often used. All of the following s
 \NewDocumentCommand\cascadeall{sO{\relaxation}mm}{
   \IfBooleanT #1 {\stopshift}
   \bool_set_true:N\ls_first_of_cascade  
-  \foreach \x in {#3}{%
+  \foreach \x in {#3}{%  %% replace this by a mapping function!
   \bool_if:NTF\ls_first_of_cascade
     {\bool_gset_false:N\ls_first_of_cascade}
     {#2{lastcasclevel}{\x}}
@@ -703,7 +763,7 @@ These are just some pre-coded things that are often used. All of the following s
 \NewDocumentCommand\cascadeallto{sO{\relaxation}mm}{
   \IfBooleanT #1 {\stopshift}
   \bool_set_true:N\ls_first_of_cascade  
-  \foreach \x in {#3}{%
+  \foreach \x in {#3}{% %% replace this by a mapping function!
   \bool_if:NTF\ls_first_of_cascade
     {\bool_gset_false:N\ls_first_of_cascade}
     {#2{lastcasclevel}{\x}}
@@ -884,7 +944,7 @@ These are just some pre-coded things that are often used. All of the following s
 % \item photons in induced emission should be vertically centered (symmetrically)
 % \item offset in Lennard-Jones potential has to be removed. No idea what is going wrong there
 % \end{itemize}
-% \section{todo – missing features}
+% \section{todo – things that have to be improved}
 % Here a section with some ideas that could be implemented.
 % \begin{itemize}
 % \item improve spacing of photons (they are too narrow to the transition)
@@ -892,13 +952,21 @@ These are just some pre-coded things that are often used. All of the following s
 % \item whateverlevel needs improvement to be a good replacement for level. Actually, level should be flexible enough to be used here. I.\,e. level must take start and endpoint. (see arbitrary positioning …)
 % \item free positioning of levels (length, horizontal pos)
 % \item HeNe is not ready …
+% \item replace the explizit node |(lastlevel)| by a tl containing the last level.
 % \item pump beams for laser transitions
+% \item …
+% \end{itemize}
+% \section{wishlist – this to implement}
+% \begin{itemize}
+% \item |\devil|
 % \item levels of a LED (solid state energy levels)
-% \item how about some axes with cool features?
+% \item how about some axes with cool features? – must be drawn at the end of a levelscheme in order to contain the whole picture
 % \item Feshbach resonances
 % \item implement colors (e.\,g. Na, Li)
 % \item implement whole correct hyperfine schemes (data?!)
 % \item implement bound/unbound molecular schemes as used in chemistry
+% \item maybe a scheme for evaporative cooling? Just to have everything needed for a whole BEC experiment …
+% \item special potentials: optical dipole trap (adjustable parameters), quadrupole trap, TOP trap, Ioffe-Pritchard trap, cloverleaf, plugged quadrupole trap.
 % \item …
 % \end{itemize}
 % \newpage
